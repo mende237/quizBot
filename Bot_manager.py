@@ -1,7 +1,5 @@
 #!/home/dimitri/Quiz_bot/myvenv/bin python
 import mysql.connector
-import schedule
-import time
 from utils.config import config
 from utils.utils import Category , Difficulty
 from QuizBot import QuizBot
