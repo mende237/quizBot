@@ -1,7 +1,10 @@
+#!/home/dimitri/Quiz_bot/myvenv/bin python
 import random
 import json
 import os
 from utils.utils import Category , Difficulty
+import asyncio
+from pyrogram import Client , filters , enums
 import schedule
 import time
 
@@ -12,10 +15,12 @@ class QuizBot:
 	__nbr_limite = None
 	__hour = None
 	__period = None
+	app = None
     
-	def __init__(self , id , groupe_id ,  quiz_API_url , telegram_bot_url , QUIZ_API_TOKEN , TELEGRAM_API_TOKEN , parameters):
+	def __init__(self , id , groupe_id , app , quiz_API_url , telegram_bot_url , QUIZ_API_TOKEN , TELEGRAM_API_TOKEN , parameters):
 		self.__id = id
 		self.groupe_id = groupe_id
+		QuizBot.app = app
 		self.__quiz_API_url = quiz_API_url
 		self.__telegram_bot_url = telegram_bot_url
 		self.__QUIZ_API_TOKEN = QUIZ_API_TOKEN
@@ -96,21 +101,22 @@ class QuizBot:
 			return "hard"
 
 
-	def quiz_request(self , category , difficulty , limit):
-		self.__category = category
-		self.__difficulty = difficulty
+	def quiz_request(self):
 		result = None
-		if category != Category.RAMDOM:
+		print("nombre de limite {}" ,self.__nbr_limite)
+		print("category {}" , self.__category_switching())
+		print("difficulty {}" , self.__difficulty_switching())
+		if self.__category != Category.RANDOM:
 			#print("limit " + limit)
 			#print("difficulty " + self.__difficulty_switching())
 			#print("category " + self.__category_switching())
 			result = os.popen(f"""curl {self.__quiz_API_url} -G -d apiKey={self.__QUIZ_API_TOKEN}​\
-																-d category={self.__category_switching()}\
-																-d difficulty={self.__difficulty_switching()}\
-																-d limit={limit}""").read()
+																-d category={self.__category}\
+																-d difficulty={self.__difficulty}\
+																-d limit={self.__nbr_limite}""").read()
 		else:
 			result = os.popen(f"""curl {self.__quiz_API_url} -G -d apiKey={self.__QUIZ_API_TOKEN}​\
-															-d limit={limit}""").read()  
+															-d limit={self.__nbr_limite}""").read()  
 		response = json.loads(result)
 		print(len(response))
 		print(response)
@@ -128,11 +134,11 @@ class QuizBot:
 		if(nbr_propositions < 2):
 			return None
 
+		print(nbr_propositions)
 		nbr = random.choice(range(2 , nbr_propositions))
 		characters_propositions = random.sample(range(97 , 96 + nbr_propositions),nbr)
 
 		proposition = chr(characters_propositions[0])
-		#print(characters_propositions)
 		for i in range(1 , len(characters_propositions)):
 			proposition = proposition + ' , ' + chr(characters_propositions[i])
 		
@@ -179,7 +185,10 @@ class QuizBot:
 			key = None
 			if multiple_correct_answers.lower() == 'false'.lower():
 			#key = str(chr(97 + nbr_propositions))
-				propositions[chr(97 + nbr_propositions)] = self.__construct_last_proposition(nbr_propositions)
+				last_p = self.__construct_last_proposition(nbr_propositions)
+				if last_p != None:
+					propositions[chr(97 + nbr_propositions)] = last_p
+
 				propositions['correct_answer'] = self.__get_correct_answer(correct_answers)
 			else:
 				propositions[chr(97 + nbr_propositions)] = self.__get_correct_answer(correct_answers) + " are true"
@@ -189,11 +198,61 @@ class QuizBot:
 
 		return questions
 
-	def __send_quiz(self):
-		pass
+
+	async def __send_quiz(self):
+		questions = self.quiz_request()
+		print(type(questions))
+		for question in questions:
+			print(question)
+
+
+		print("\n")
+		print("\n")
+		print("\n")
+
+		for question in questions:
+			keys = question.keys()
+			cmpt = 0
+			index_correct = 0
+			propositions = []
+			#si la longueur la question est supperieur a 255 telegram ne peut pas 
+			#prendre cette question en charge dans ce cas on annnule la question
+			if len(question["question"]) > 255:
+				continue
+			
+			interupt = False
+			for key in keys:
+				if key not in ["question" , "correct_answer"]:
+					if key == question["correct_answer"]:
+						index_correct = cmpt
+						#si la longueur de l'option est supperieur a 100 telegram ne peut pas 
+						#prendre cette question en charge dans ce cas on annule complement la 
+						#question
+					if len(question[key]) > 100:
+						interupt = True
+						break
+
+					propositions.append(question[key])
+					cmpt += 1
+
+			if interupt == True:
+				continue
+			
+			print(question["question"])
+			print(propositions)
+
+			print(index_correct)
+
+			async with QuizBot.app:
+				await QuizBot.app.send_poll(self.groupe_id , question["question"] , propositions , type = enums.PollType.QUIZ , correct_option_id = index_correct)
+
+		
+
 	
-	def schedule_quiz(self):
-		if self.__period / 24 == 0:
+	async def schedule_quiz(self):
+		await self.__send_quiz()
+
+		""" if self.__period / 24 == 0:
 			schedule.every(self.__hour).hours.do(self.__send_quiz)
 		elif self.__period/24 == 1:
 			schedule.every().day().at(self.__hour).do(self.__send_quiz)
@@ -214,19 +273,34 @@ class QuizBot:
 			print("every six days")
 		else:
 			schedule.every().week().do(self.__hour)
-			print("every week")
+			print("every week") """
 
+		def __str__(self):
+			return self.groupe_id
   
 # QUIZ_API_TOKEN = "GMtZogjvXFZHn36AIygLrNrHRrzhWmZKzySbAVYL"
 # TELEGRAM_API_TOKEN = "5401510818:AAF9L3gnfKEUzzk06JDe1U0Sm1bNBhkLpUg"
 
-
 # quiz_API_url = "https://quizapi.io/api/v1/questions"
 # telegram_bot_url = "https://api.telegram.org/bot{}/{}"
 
+# app = None
+# parameter = {"difficulty" : "easy", "category" : Category.LINUX, "nbr_limite" : 2}
 
-# quiz = QuizBot(quiz_API_url , telegram_bot_url , QUIZ_API_TOKEN , TELEGRAM_API_TOKEN)
+# quiz = QuizBot(1 , "toto" , app , quiz_API_url , telegram_bot_url
+#                         ,QUIZ_API_TOKEN , TELEGRAM_API_TOKEN ,  parameter)
 
-# questions = quiz.quiz_request(Category.LINUX , Difficulty.MEDIUM , "5")
+# """ questions = quiz.quiz_request()
+# for question in questions:
+# 	print(question)
+
+
+# print("\n")
+# print("\n")
+# print("\n")
+#  """
+# quiz.schedule_quiz()
+
+
 
 

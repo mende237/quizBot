@@ -3,7 +3,7 @@ import mysql.connector
 from utils.config import config
 from utils.utils import Category , Difficulty
 from QuizBot import QuizBot
-
+import asyncio
 
 
 class BotManager:
@@ -165,7 +165,8 @@ class BotManager:
                 return None
         
         
-    def load_all():
+    async def load_all(app):
+        print("*******************************************************************************")
         conn = BotManager.connect()
         print(conn)
         my_cursor = conn.cursor()
@@ -179,10 +180,10 @@ class BotManager:
         for line in data:
             my_cursor.execute("SELECT username FROM Groupe where id_Bot = %s" , (line["id"],))
             username = my_cursor.fetchall()[0][0]
-            quizBot = QuizBot(line["id"] , username , BotManager.quiz_API_url , BotManager.telegram_bot_url
+            quizBot = QuizBot(line["id"] , username , app , BotManager.quiz_API_url , BotManager.telegram_bot_url
                                           , BotManager.QUIZ_API_TOKEN , BotManager.TELEGRAM_API_TOKEN , line)
             BotManager.bot_list.append(quizBot)
-        
+            await quizBot.schedule_quiz()
         conn.close()
     
         
@@ -300,19 +301,21 @@ class BotManager:
 
 
 
-BotManager.load_all()
-
 import asyncio
 from pyrogram import Client , filters , enums
+
 api_id = 15150655
 api_hash = "68e947ab567a62b78c70b8243307623c"
 bot_token = "5401510818:AAF9L3gnfKEUzzk06JDe1U0Sm1bNBhkLpUg"
 
 app = Client(
     "my_bot",
-    api_id=api_id, api_hash=api_hash,
+    api_id=api_id, 
+    api_hash=api_hash,
     bot_token=bot_token
 )
+
+
 
 def extract_usefull_information(message):
     username = message.sender_chat.username
@@ -325,11 +328,6 @@ def extract_usefull_information(message):
     
     return informations
 
-# @app.on_message(filters.command("global_config") & filters.channel)
-# async def command1(app , message):
-#     await app.send_message(message.chat.id , "hey i am a simple test bot")
-#     chat = await app.get_chat("Ox00000d3")
-#     print(chat)
 
 @app.on_message(filters.command("register") & filters.channel)
 async def register_bot(app , message):
@@ -348,7 +346,7 @@ async def register_bot(app , message):
         #on verifie que l'insertion en BD c'est bien passé
         print("bot_id %s" , bot_id)
         if bot_id != None:
-            quizBot = QuizBot(bot_id , username , BotManager.quiz_API_url , BotManager.telegram_bot_url
+            quizBot = QuizBot(bot_id , app , username , BotManager.quiz_API_url , BotManager.telegram_bot_url
                                           , BotManager.QUIZ_API_TOKEN , BotManager.TELEGRAM_API_TOKEN , command)
             BotManager.bot_list.append(quizBot)
         
@@ -364,6 +362,9 @@ async def update_info(app , message):
 
     if quizBot != None:
         command = BotManager.parse_parameter(informations["command"])
+        if command == None or not bool(command):
+            return None
+
         BotManager.update_parameter(username , command)
         quizBot.set_parameters(command)
         print(command)
@@ -371,91 +372,11 @@ async def update_info(app , message):
     else:
         print("register your group before")
 
-# @app.on_message(filters.command("category") & filters.channel)
-# async def update_category(app , message):
-#     informations = extract_usefull_information(message)
-#     quizBot = BotManager.find_bot(informations.username)
-    
-#     if quizBot != None:
-#         category = BotManager.text_to_Enum(informations["command"][1] , True)
-#         quizBot.category = category
-#         if category == None:
-#             print("errorrrrrrrr")
-#         else:
-#            BotManager.update_manual_parameter(category = informations["command"][1]) 
-#     else:
-#         print("register your group before")
         
-    
-# @app.on_message(filters.command("difficulty") & filters.channel)
-# async def update_difficulty(app , message):
-#     informations = extract_usefull_information(message)
-#     quizBot = BotManager.find_bot(informations.username)
-    
-#     if quizBot != None:
-#         category = BotManager.text_to_Enum(informations["command"][1] , False)
-#         quizBot.category = category
-#         if category == None:
-#             print("errorrrrrrrr unknow category")
-#         else:
-#            BotManager.update_manual_parameter(category = informations["command"][1]) 
-#     else:
-#         print("register your group before")
-        
-    
-# @app.on_message(filters.command("hour") & filters.channel)
-# async def update_hour(app , message):
-#     informations = extract_usefull_information(message)
-#     quizBot = BotManager.find_bot(informations.username)
-    
-#     if quizBot != None:
-#         hour = BotManager.verify_hour(informations["command"][1])
-#         quizBot.hour = hour
-#         if hour == None:
-#             print("errorrrrrrrr hour format")
-#         else:
-#            BotManager.update_automatic_parameter(hour = informations["command"][1]) 
-#     else:
-#         print("register your group before")
-    
-    
-# @app.on_message(filters.command("period") & filters.channel)
-# async def update_hour(app , message):
-#     informations = extract_usefull_information(message)
-#     quizBot = BotManager.find_bot(informations.username)
-    
-#     if quizBot != None:
-#         period = BotManager.verify_hour(informations["command"][1] , is_hour = False)
-#         quizBot.period = period
-#         if period == None:
-#             print("errorrrrrrrr period format")
-#         else:
-#            BotManager.update_automatic_parameter(hour = informations["command"][1]) 
-#     else:
-#         print("register your group before")
-   
 
-# @app.on_message(filters.command("help") & filters.private)
-# def command2(app , message):
 
-#     app.send_message(message.chat.id , "hey i am a simple test bot")
-    
-    
-@app.on_message(filters.command("admin"))
-async def command3(app , message):
-    print(message.from_user)
-    
-    
-@app.on_message(filters.command("members"))
-async def command4(app , message):
-    async for m in app.get_chat_members(message.chat.id , filter=enums.ChatMembersFilter.ADMINISTRATORS):
-        print(m)
-    
-@app.on_chat_join_request(filters.command("/group") & filters.group)
-async def command5(app , message):
-    print(message)
-      
-
-print("i am alive")
+print("I am alive")
+app.run(BotManager.load_all(app))
 app.run()
+
 
