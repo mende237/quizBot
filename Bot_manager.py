@@ -1,4 +1,5 @@
 #!/home/dimitri/Quiz_bot/myvenv/bin python
+from http import client
 import mysql.connector
 from utils.config import config
 from utils.utils import Category , Difficulty
@@ -368,6 +369,19 @@ async def update_info(app , message):
         BotManager.update_parameter(username , command)
         quizBot.set_parameters(command)
         print(command)
+        print("group already register")
+    else:
+        print("register your group before")
+
+
+@app.on_message(filters.command("send") & filters.channel)
+async def send_quiz(app , message):
+    informations = extract_usefull_information(message)
+    username = informations["username"]
+    quizBot = BotManager.find_bot(informations["username"])
+
+    if quizBot != None:
+        await quizBot.send_quiz()       
         print("group already register")
     else:
         print("register your group before")

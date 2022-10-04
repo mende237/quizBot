@@ -199,7 +199,7 @@ class QuizBot:
 		return questions
 
 
-	async def __send_quiz(self):
+	async def send_quiz(self):
 		questions = self.quiz_request()
 		print(type(questions))
 		for question in questions:
@@ -243,37 +243,43 @@ class QuizBot:
 
 			print(index_correct)
 
-			async with QuizBot.app:
+			
+			if QuizBot.app.is_connected == True:
 				await QuizBot.app.send_poll(self.groupe_id , question["question"] , propositions , type = enums.PollType.QUIZ , correct_option_id = index_correct)
+			else:
+				async with QuizBot.app:
+					await QuizBot.app.send_poll(self.groupe_id , question["question"] , propositions , type = enums.PollType.QUIZ , correct_option_id = index_correct)
 
 		
 
 	
 	async def schedule_quiz(self):
-		await self.__send_quiz()
+		if self.__automatic == 1 and self.__hour != None and self.__period != None:
+			await self.send_quiz()
+			if self.__period / 24 == 0:
+				schedule.every(self.__hour).hours.do(self.__send_quiz)
+			elif self.__period/24 == 1:
+				schedule.every().day().at(self.__hour).do(self.__send_quiz)
+			elif self.__period / 24 == 2:
+				schedule.every(2).days().at(self.__hour).do(self.__send_quiz)
+				print("every two days")
+			elif self.__period / 24 == 3:
+				schedule.every(3).days().at(self.__hour).do(self.__send_quiz)
+				print("every three days")
+			elif self.__period / 24 == 4:
+				schedule.every(4).days().at(self.__hour).do(self.__send_quiz)
+				print("every four days")
+			elif self.__period / 24 == 5:
+				schedule.every(5).days().at(self.__hour).do(self.__send_quiz)
+				print("every five days")
+			elif self.__period / 24 == 6:
+				schedule.every(6).days().at(self.__hour).do(self.__send_quiz)
+				print("every six days")
+			else:
+				schedule.every().week().do(self.__hour)
+				print("every week") 
+			
 
-		""" if self.__period / 24 == 0:
-			schedule.every(self.__hour).hours.do(self.__send_quiz)
-		elif self.__period/24 == 1:
-			schedule.every().day().at(self.__hour).do(self.__send_quiz)
-		elif self.__period / 24 == 2:
-			schedule.every(2).days().at(self.__hour).do(self.__send_quiz)
-			print("every two days")
-		elif self.__period / 24 == 3:
-			schedule.every(3).days().at(self.__hour).do(self.__send_quiz)
-			print("every three days")
-		elif self.__period / 24 == 4:
-			schedule.every(4).days().at(self.__hour).do(self.__send_quiz)
-			print("every four days")
-		elif self.__period / 24 == 5:
-			schedule.every(5).days().at(self.__hour).do(self.__send_quiz)
-			print("every five days")
-		elif self.__period / 24 == 6:
-			schedule.every(6).days().at(self.__hour).do(self.__send_quiz)
-			print("every six days")
-		else:
-			schedule.every().week().do(self.__hour)
-			print("every week") """
 
 		def __str__(self):
 			return self.groupe_id
