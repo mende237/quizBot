@@ -2,6 +2,7 @@
 import random
 import json
 import os
+from unicodedata import category
 from utils.utils import Category , Difficulty
 import asyncio
 from pyrogram import Client , filters , enums
@@ -15,7 +16,10 @@ class QuizBot:
 	__nbr_limite = None
 	__hour = None
 	__period = None
+	__job = None
+	__message = "this series of quizz is about {category} difficulty {difficulty}"
 	app = None
+	index = 0
     
 	def __init__(self , id , groupe_id , app , quiz_API_url , telegram_bot_url , QUIZ_API_TOKEN , TELEGRAM_API_TOKEN , parameters):
 		self.__id = id
@@ -25,13 +29,50 @@ class QuizBot:
 		self.__telegram_bot_url = telegram_bot_url
 		self.__QUIZ_API_TOKEN = QUIZ_API_TOKEN
 		self.__TELEGRAM_API_TOKEN = TELEGRAM_API_TOKEN
-		self.set_parameters(parameters)
+		self.__set_parameters(parameters)
+		QuizBot.index = QuizBot.index + 1
 
 		  
 
-	def set_parameters(self , parameters):
+	def __set_parameters(self , parameters , is_init : bool = True):
 		keys = parameters.keys()
-  
+		modif = False
+
+		if "automatic" in keys:
+			self.__automatic = parameters["automatic"]
+   
+		if "category" in keys:
+			self.__category = parameters["category"]
+			print(self.__category)
+
+		if "difficulty" in keys:
+			self.__difficulty = parameters["difficulty"]
+   
+		if "nbr_limite" in keys:
+			self.__nbr_limite = parameters["nbr_limite"]
+   
+		if "hour" in keys:
+			if self.__hour != parameters["hour"]:
+				modif = True
+			self.__hour = parameters["hour"]
+		
+		if "period" in keys:
+			if self.__period != parameters["period"]:
+				modif = True
+			self.__period = parameters["period"]
+			
+		if is_init == False:
+			if modif == True:
+				schedule.cancel_job(self.__job)
+				self.schedule_quiz()
+
+		print(f"automatic {self.__automatic } category {self.__category} difficulty {self.__difficulty} nbr_limte {self.__nbr_limite } hour {self.__hour } preiod {self.__period}")
+
+		
+	async def set_parameter_asynchronously(self , parameters):
+		keys = parameters.keys()
+		modif = False
+
 		if "automatic" in keys:
 			self.__automatic = parameters["automatic"]
    
@@ -45,10 +86,18 @@ class QuizBot:
 			self.__nbr_limite = parameters["nbr_limite"]
    
 		if "hour" in keys:
+			if self.__hour != parameters["hour"]:
+				modif = True
 			self.__hour = parameters["hour"]
 		
 		if "period" in keys:
+			if self.__period != parameters["period"]:
+				modif = True
 			self.__period = parameters["period"]
+			
+		if modif == True:
+			schedule.cancel_job(self.__job)
+			await self.schedule_quiz()
 
 		print(f"automatic {self.__automatic } category {self.__category} difficulty {self.__difficulty} nbr_limte {self.__nbr_limite } hour {self.__hour } preiod {self.__period}")
 
@@ -76,18 +125,18 @@ class QuizBot:
 	def __category_switching(self):
 		if self.__category == Category.LINUX:
 			return "Linux"
+		if self.__category == Category.BASH:
+			return "Bash"
 		elif self.__category == Category.DEVOPS:
 			return "DevOps"
-		elif self.__category == Category.NETWORKING:
-			return "Networking"
-		elif self.__category == Category.PROGRAMMING:
-			return "Programming"
-		elif self.__category == Category.CLOUD:
-			return "Cloud"
+		elif self.__category == Category.CODE:
+			return "code"
+		elif self.__category == Category.CMS:
+			return "cms"
+		elif self.__category == Category.SQL:
+			return "sql"
 		elif self.__category == Category.DOCKER:
 			return "Docker"
-		elif self.__category == Category.KUBERNETES:
-			return "Kubernetes"
 		elif self.__category == Category.RANDOM:
 			return "random"
 
@@ -103,23 +152,20 @@ class QuizBot:
 
 	def quiz_request(self):
 		result = None
-		print("nombre de limite {}" ,self.__nbr_limite)
-		print("category {}" , self.__category_switching())
-		print("difficulty {}" , self.__difficulty_switching())
+		print("limit " , self.__nbr_limite)
+		print("difficulty " , self.__difficulty)
+		print("category " , self.__category)
 		if self.__category != Category.RANDOM:
-			#print("limit " + limit)
-			#print("difficulty " + self.__difficulty_switching())
-			#print("category " + self.__category_switching())
 			result = os.popen(f"""curl {self.__quiz_API_url} -G -d apiKey={self.__QUIZ_API_TOKEN}​\
 																-d category={self.__category}\
 																-d difficulty={self.__difficulty}\
 																-d limit={self.__nbr_limite}""").read()
 		else:
 			result = os.popen(f"""curl {self.__quiz_API_url} -G -d apiKey={self.__QUIZ_API_TOKEN}​\
-															-d limit={self.__nbr_limite}""").read()  
+																-d limit={self.__nbr_limite}""").read()  
 		response = json.loads(result)
 		print(len(response))
-		print(response)
+		# print(response)
 		return self.__parse_questions(response)
 
 
@@ -201,12 +247,22 @@ class QuizBot:
 
 	async def send_quiz(self):
 		questions = self.quiz_request()
+		if self.__category == Category.RANDOM:
+			self.__message = "this series of quizz is a random serie"
+		else:
+			self.__message = self.__message.format(category = self.__category , difficulty = self.__difficulty)
+
+		if QuizBot.app.is_connected == True:
+			await QuizBot.app.send_message(self.groupe_id , self.__message)
+		else:
+			async with QuizBot.app:
+				await QuizBot.app.send_message(self.groupe_id , self.__message)
+
 		print(type(questions))
 		for question in questions:
 			print(question)
 
 
-		print("\n")
 		print("\n")
 		print("\n")
 
@@ -251,32 +307,32 @@ class QuizBot:
 					await QuizBot.app.send_poll(self.groupe_id , question["question"] , propositions , type = enums.PollType.QUIZ , correct_option_id = index_correct)
 
 		
-
-	
 	async def schedule_quiz(self):
-		if self.__automatic == 1 and self.__hour != None and self.__period != None:
-			await self.send_quiz()
-			if self.__period / 24 == 0:
-				schedule.every(self.__hour).hours.do(self.__send_quiz)
+		print("enter {}" , self.__period)
+		if self.__automatic == 1 and self.__period != None:
+			if int(self.__period / 24) == 0:
+				self.__job = schedule.every(self.__period).hours.do(self.send_quiz)
+				print("every {} hour(s)" , self.__period)
 			elif self.__period/24 == 1:
-				schedule.every().day().at(self.__hour).do(self.__send_quiz)
+				self.__job = schedule.every().day().at(self.__hour).do(self.send_quiz)
+				print("every day")
 			elif self.__period / 24 == 2:
-				schedule.every(2).days().at(self.__hour).do(self.__send_quiz)
+				self.__job = schedule.every(2).days().at(self.__hour).do(self.send_quiz)
 				print("every two days")
 			elif self.__period / 24 == 3:
-				schedule.every(3).days().at(self.__hour).do(self.__send_quiz)
+				self.__job = schedule.every(3).days().at(self.__hour).do(self.send_quiz)
 				print("every three days")
 			elif self.__period / 24 == 4:
-				schedule.every(4).days().at(self.__hour).do(self.__send_quiz)
+				self.__job = schedule.every(4).days().at(self.__hour).do(self.send_quiz)
 				print("every four days")
 			elif self.__period / 24 == 5:
-				schedule.every(5).days().at(self.__hour).do(self.__send_quiz)
+				self.__job = schedule.every(5).days().at(self.__hour).do(self.send_quiz)
 				print("every five days")
 			elif self.__period / 24 == 6:
-				schedule.every(6).days().at(self.__hour).do(self.__send_quiz)
+				self.__job = schedule.every(6).days().at(self.__hour).do(self.send_quiz)
 				print("every six days")
 			else:
-				schedule.every().week().do(self.__hour)
+				self.__job = schedule.every().week().do(self.send_quiz)
 				print("every week") 
 			
 

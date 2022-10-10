@@ -1,6 +1,8 @@
 # Schedule Library imported
-import schedule
+import schedule 
 import time
+
+from utils.utils import Difficulty
 
 # Functions setup
 def sudo_placement():
@@ -23,7 +25,7 @@ def test_day():
 
 # Task scheduling
 # After every 10mins geeks() is called.
-schedule.every().minute.do(geeks)
+schedule.every().minute.do(geeks).tag("minute")
 
 # After every hour geeks() is called.
 schedule.every().hour.do(geeks)
@@ -44,12 +46,29 @@ schedule.every().tuesday.at("18:00").do(sudo_placement)
 
 schedule.every(2).days.at("10:30").do(test_day)
 
-# Loop so that the scheduling task
-# keeps on running all time.
-while True:
-	# Checks whether a scheduled task
-	# is pending to run or not
-	schedule.run_pending()
-	time.sleep(1)
+# # Loop so that the scheduling task
+# # keeps on running all time.
+# while True:
+# 	# Checks whether a scheduled task
+# 	# is pending to run or not
+# 	schedule.run_pending()
+# 	time.sleep(1)
+
+import os
+import json
+
+QUIZ_API_TOKEN = "GMtZogjvXFZHn36AIygLrNrHRrzhWmZKzySbAVYL"
+difficulty = "easy"
+quiz_API_url = "https://quizapi.io/api/v1/questions"
+nbr_limite = 1
+category = "Kubernetes"
 
 
+result = os.popen(f"""curl {quiz_API_url} -G -d apiKey={QUIZ_API_TOKEN}​\
+											 -d category={category}\
+											 -d difficulty={difficulty}\
+											 -d limit={nbr_limite}""").read()
+
+response = json.loads(result)
+
+print(response)

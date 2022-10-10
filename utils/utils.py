@@ -2,13 +2,15 @@ from enum import Enum
 
 class Category(Enum):
 	LINUX = 1
-	DEVOPS = 2
-	NETWORKING = 3
-	PROGRAMMING = 4
-	CLOUD = 5
+	BASH = 2
+	DEVOPS = 3
+	CODE = 4
+	SQL = 5
 	DOCKER = 6
-	KUBERNETES = 7
+	CMS = 7
 	RANDOM = 8
+	GENERAL = 9
+
  
 class Difficulty(Enum):
     EASY = 1

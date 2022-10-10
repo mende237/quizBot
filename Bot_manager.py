@@ -5,6 +5,9 @@ from utils.config import config
 from utils.utils import Category , Difficulty
 from QuizBot import QuizBot
 import asyncio
+import schedule
+import threading 
+import time
 
 
 class BotManager:
@@ -15,7 +18,10 @@ class BotManager:
     quiz_API_url = "https://quizapi.io/api/v1/questions"
     telegram_bot_url = "https://api.telegram.org/bot{}/{}"
     
+    #contient la liste des bots qui sont lancés
     bot_list = []
+    #est un dictionnaire dont la cle est le nom d'utilisateur et la valeur nom d'utilisateur du canal associé
+    connexions = {}
     
     def connect():
         conn = mysql.connector.connect(
@@ -141,12 +147,12 @@ class BotManager:
                 return  Category.LINUX
             elif str.lower() == "DevOps".lower():
                 return Category.DEVOPS
-            elif str.lower() == "Networking".lower():
-                return Category.NETWORKING
-            elif str.lower() == "Programming".lower():
-                return  Category.PROGRAMMING
-            elif str.lower() == "Cloud".lower():
-                return  Category.CLOUD
+            elif str.lower() == "sql".lower():
+                return Category.SQL
+            elif str.lower() == "code".lower():
+                return  Category.CODE
+            elif str.lower() == "cms".lower():
+                return  Category.CMS
             elif str.lower() == "Docker".lower():
                 return Category.DOCKER
             elif str.lower() == "Kubernetes".lower():
@@ -183,6 +189,7 @@ class BotManager:
             username = my_cursor.fetchall()[0][0]
             quizBot = QuizBot(line["id"] , username , app , BotManager.quiz_API_url , BotManager.telegram_bot_url
                                           , BotManager.QUIZ_API_TOKEN , BotManager.TELEGRAM_API_TOKEN , line)
+            print(line)
             BotManager.bot_list.append(quizBot)
             await quizBot.schedule_quiz()
         conn.close()
@@ -269,7 +276,14 @@ class BotManager:
             return parameter
         else:
             print("command errrrrorrrr")
-            return None               
+            return None     
+
+    def parse_connect_parameter(command):
+        if len(command) == 2:
+            return command[1]
+        else:
+            return None
+        pass        
     
     #cette fonction permet gerer les erreur convertion
     def handle_error_parsed(parsed_command , is_register_command = True):
@@ -279,7 +293,6 @@ class BotManager:
     #cette fonction est charge de veifier la chaine passe en parametre respecte
     #le format de l'heure
     def verify_hour(hour , is_hour = True):
-        
         return hour
            
     def find_bot(groupe_id):
@@ -289,7 +302,12 @@ class BotManager:
 
         return None
 
-
+    def schedule_quizBot():
+        while True:
+            # Checks whether a scheduled task
+            # is pending to run or not
+            schedule.run_pending()
+            time.sleep(1)
     
 # BotManager.insert_group(user_name="tamo" , automatic="0" , nbr_limite="35" , period= "256")
 # r = BotManager.update_parameter("tamo" , difficulty="hard" , category = "window")
@@ -318,8 +336,14 @@ app = Client(
 
 
 
-def extract_usefull_information(message):
-    username = message.sender_chat.username
+def extract_usefull_information(message , is_private_message = False):
+
+    username = None
+    if is_private_message == True:
+        username = message.from_user.username
+    else:
+        username = message.sender_chat.username
+
     command = message.command
     description = None
     informations = {"username":username,
@@ -329,68 +353,138 @@ def extract_usefull_information(message):
     
     return informations
 
+async def register(app  , message , is_private_message = False):
+	quizBot = None
+	informations = extract_usefull_information(message , is_private_message = is_private_message)
+	username = informations["username"]
+	if is_private_message == True:
+		if message.from_user.username not in BotManager.connexions.keys():
+			print("connect you before")
+			return None
+		else:
+			username = BotManager.connexions[username]
+			
+	quizBot = BotManager.find_bot(username)
+	if quizBot != None:
+		BotManager.send_error_message("group already register")
+	else:
+		command = BotManager.parse_parameter(informations["command"])
+		if command == None or not bool(command):
+			return None
 
-@app.on_message(filters.command("register") & filters.channel)
-async def register_bot(app , message):
-    quizBot = None
-    informations = extract_usefull_information(message)
+		bot_id = BotManager.insert_group(username , command)
+		#on verifie que l'insertion en BD c'est bien passé
+		print("bot_id %s" , bot_id)
+		if bot_id != None:
+			quizBot = QuizBot(bot_id , app , username , BotManager.quiz_API_url , BotManager.telegram_bot_url
+											, BotManager.QUIZ_API_TOKEN , BotManager.TELEGRAM_API_TOKEN , command)
+			BotManager.bot_list.append(quizBot)
+			await quizBot.schedule_quiz()
+		print(command)
+		print("register your group before")
+
+
+
+async def update(app , message , is_private_message = False):
+    informations = extract_usefull_information(message , is_private_message = is_private_message)
     username = informations["username"]
+
+    if is_private_message == True:
+        if message.from_user.username not in BotManager.connexions.keys():
+            print("connect you before")
+            return None
+        else:
+            username = BotManager.connexions[username]
+
     quizBot = BotManager.find_bot(username)
     if quizBot != None:
-        BotManager.send_error_message("group already register")
-    else:
         command = BotManager.parse_parameter(informations["command"])
         if command == None or not bool(command):
-            return None
-
-        bot_id = BotManager.insert_group(username , command)
-        #on verifie que l'insertion en BD c'est bien passé
-        print("bot_id %s" , bot_id)
-        if bot_id != None:
-            quizBot = QuizBot(bot_id , app , username , BotManager.quiz_API_url , BotManager.telegram_bot_url
-                                          , BotManager.QUIZ_API_TOKEN , BotManager.TELEGRAM_API_TOKEN , command)
-            BotManager.bot_list.append(quizBot)
-        
-        print(command)
-        print("register your group before")
-        
-
-@app.on_message(filters.command("update") & filters.channel)
-async def update_info(app , message):
-    informations = extract_usefull_information(message)
-    username = informations["username"]
-    quizBot = BotManager.find_bot(informations["username"])
-
-    if quizBot != None:
-        command = BotManager.parse_parameter(informations["command"])
-        if command == None or not bool(command):
+            print("errorrrrrrrrrrrrrrrrrrr")
             return None
 
         BotManager.update_parameter(username , command)
-        quizBot.set_parameters(command)
+        await quizBot.set_parameter_asynchronously(command)
         print(command)
         print("group already register")
     else:
         print("register your group before")
 
-
-@app.on_message(filters.command("send") & filters.channel)
-async def send_quiz(app , message):
-    informations = extract_usefull_information(message)
+async def send(app , message , is_private_message = False):
+    informations = extract_usefull_information(message , is_private_message = is_private_message)
     username = informations["username"]
-    quizBot = BotManager.find_bot(informations["username"])
 
+    if is_private_message == True:
+        if message.from_user.username not in BotManager.connexions.keys():
+            print("connect you before")
+            return None
+        else:
+            username = BotManager.connexions[username]
+
+    quizBot = BotManager.find_bot(username)
     if quizBot != None:
         await quizBot.send_quiz()       
-        print("group already register")
     else:
         print("register your group before")
 
+
+@app.on_message(filters.command("register") & filters.channel)
+async def register_from_channel(app , message):
+   await register(app , message)
+
+@app.on_message(filters.command("register") & filters.private)
+async def register_from_private_chat(app , message):
+	await register(app , message , is_private_message = True)
+
+#update data from channel
+@app.on_message(filters.command("update") & filters.channel)
+async def update_info_from_channel(app , message):
+    await update(app , message)
+
+#update data from a private chat 
+@app.on_message(filters.command("update") & filters.private)
+async def update_info_from_private_chat(app , message):
+    await update(app , message , is_private_message = True)
+
+
+@app.on_message(filters.command("send") & filters.channel)
+async def send_quiz_from_channel(app , message):
+    await send(app , message)
+
+@app.on_message(filters.command("send") & filters.private)
+async def send_quiz_from_private_chat(app , message):
+    await send(app , message , is_private_message = True)
+
+@app.on_message(filters.command("connect") & filters.private)
+async def connect(app , message):
+    # print(message)
+    informations = extract_usefull_information(message , is_private_message = True)
+    username = informations["username"]
+    canal_username = BotManager.parse_connect_parameter(informations["command"])
+
+    if username in BotManager.connexions.keys():
+        print("you are already connect")
+    else:
+        if canal_username == None:
+            print("enter a username")
+        else:
+            BotManager.connexions[username] = canal_username
+            print("connexion reussi")
+
+@app.on_message(filters.command("disconnect") & filters.private)
+async def connect(app , message):
+    if message.from_user.username in BotManager.connexions.keys():
+        BotManager.connexions.pop(message.from_user.username)
+        print("succeful logout")
+    else:
+        print("unknow user")
+
         
-
-
 print("I am alive")
 app.run(BotManager.load_all(app))
+# x = threading.Thread(target=BotManager.schedule_quizBot)
+# x.start()
+
 app.run()
 
 
