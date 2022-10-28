@@ -16,3 +16,7 @@ class Difficulty(Enum):
     EASY = 1
     MEDIUM = 2
     HARD = 3
+
+class Api(Enum):
+	QUIZ_API = 1
+	TRIVIA_API = 2

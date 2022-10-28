@@ -1,5 +1,6 @@
 #!/home/dimitri/Quiz_bot/myvenv/bin python
 from http import client
+from unittest import async_case
 import mysql.connector
 from utils.config import config
 from utils.utils import Category , Difficulty
@@ -17,7 +18,11 @@ class BotManager:
 
     quiz_API_url = "https://quizapi.io/api/v1/questions"
     telegram_bot_url = "https://api.telegram.org/bot{}/{}"
+
+    quiz_urls = {"specific" : ["https://quizapi.io/api/v1/questions" , "GMtZogjvXFZHn36AIygLrNrHRrzhWmZKzySbAVYL"],
+                "genral" : "https://opentdb.com/api.php?amount={nbr_limite}&category=18&difficulty={difficulty}"}
     
+
     #contient la liste des bots qui sont lancés
     bot_list = []
     #est un dictionnaire dont la cle est le nom d'utilisateur et la valeur nom d'utilisateur du canal associé
@@ -145,6 +150,8 @@ class BotManager:
         if is_category == True:
             if str.lower() == "Linux".lower():
                 return  Category.LINUX
+            if str.lower() == "bash".lower():
+                return  Category.BASH
             elif str.lower() == "DevOps".lower():
                 return Category.DEVOPS
             elif str.lower() == "sql".lower():
@@ -155,10 +162,10 @@ class BotManager:
                 return  Category.CMS
             elif str.lower() == "Docker".lower():
                 return Category.DOCKER
-            elif str.lower() == "Kubernetes".lower():
-                return  Category.KUBERNETES
             elif str.lower() == "random".lower():
                 return Category.RANDOM
+            elif str.lower() == "general".lower():
+                return Category.GENERAL
             else:
                 return None
         else:
@@ -187,8 +194,8 @@ class BotManager:
         for line in data:
             my_cursor.execute("SELECT username FROM Groupe where id_Bot = %s" , (line["id"],))
             username = my_cursor.fetchall()[0][0]
-            quizBot = QuizBot(line["id"] , username , app , BotManager.quiz_API_url , BotManager.telegram_bot_url
-                                          , BotManager.QUIZ_API_TOKEN , BotManager.TELEGRAM_API_TOKEN , line)
+            quizBot = QuizBot(line["id"] , username , app , BotManager.quiz_urls , BotManager.telegram_bot_url
+                                        , BotManager.TELEGRAM_API_TOKEN , line)
             print(line)
             BotManager.bot_list.append(quizBot)
             await quizBot.schedule_quiz()
@@ -302,10 +309,17 @@ class BotManager:
 
         return None
 
-    def schedule_quizBot():
+    async def schedule_quizBot():
         while True:
             # Checks whether a scheduled task
             # is pending to run or not
+            task = asyncio.create_task(asyncio.sleep(1))
+            try:
+                await task
+            except asyncio.CancelledError:
+                break
+            
+            print("cooollllllll")
             schedule.run_pending()
             time.sleep(1)
     
@@ -321,7 +335,7 @@ class BotManager:
 
 
 import asyncio
-from pyrogram import Client , filters , enums
+from pyrogram import Client , filters , enums , idle
 
 api_id = 15150655
 api_hash = "68e947ab567a62b78c70b8243307623c"
@@ -376,8 +390,8 @@ async def register(app  , message , is_private_message = False):
 		#on verifie que l'insertion en BD c'est bien passé
 		print("bot_id %s" , bot_id)
 		if bot_id != None:
-			quizBot = QuizBot(bot_id , app , username , BotManager.quiz_API_url , BotManager.telegram_bot_url
-											, BotManager.QUIZ_API_TOKEN , BotManager.TELEGRAM_API_TOKEN , command)
+			quizBot = QuizBot(bot_id , app , username , BotManager.quiz_urls , BotManager.telegram_bot_url
+											, BotManager.TELEGRAM_API_TOKEN , command)
 			BotManager.bot_list.append(quizBot)
 			await quizBot.schedule_quiz()
 		print(command)
@@ -482,9 +496,12 @@ async def connect(app , message):
         
 print("I am alive")
 app.run(BotManager.load_all(app))
+app.start()
+asyncio.gather(idle() , BotManager.schedule_quizBot())
+# asyncio.run(BotManager.load_all(app))
 # x = threading.Thread(target=BotManager.schedule_quizBot)
 # x.start()
+# BotManager.schedule_quizBot()
 
-app.run()
 
-
+app.stop()

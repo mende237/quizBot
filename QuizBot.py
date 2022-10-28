@@ -1,9 +1,11 @@
 #!/home/dimitri/Quiz_bot/myvenv/bin python
+import os
 import random
+import requests
 import json
 import os
 from unicodedata import category
-from utils.utils import Category , Difficulty
+from utils.utils import Category , Difficulty , Api
 import asyncio
 from pyrogram import Client , filters , enums
 import schedule
@@ -20,14 +22,51 @@ class QuizBot:
 	__message = "this series of quizz is about {category} difficulty {difficulty}"
 	app = None
 	index = 0
+
+	bash = ["CAACAgQAAxkBAAEZRzRjVVEnAYdigEUWUHc0M5WsgySOZQACSAsAAi7kmFKpMpEkFUXnUCoE",
+			"CAACAgQAAxkBAAEZR0BjVVM4SSpUPRb314GRk4hRI7U7bAACcg4AAirXoVIWHf4FJ_SA8SoE",
+			"CAACAgQAAxkBAAEZR0JjVVNM8PorBv2LIjBW2KHufcgeowACiQsAAh0LoFJ6drJASNHiRSoE"]
+
+	cms = ["CAACAgQAAxkBAAEZR0RjVVNvoG8Y4tpzuFlwTFCk-2zHIAAC4QwAAupHoFKbhFiwc26_ASoE",
+		   "CAACAgQAAxkBAAEZR0ZjVVOOd4_ysNAhDkURZVhLVo9wJQACIgwAAkMHoFIwP8IjwWywBioE",
+		   "CAACAgQAAxkBAAEZR0pjVVOpfLH_rGcjCoqB_v9sUfIvhAACHQ0AAk__mFJODZOy7sMSCioE"]
+
+	devops = ["CAACAgQAAxkBAAEZR0xjVVPEJSWq-R5d0XRepEz-lZSPsAAClw0AAleJmFL8HOmX5lCDISoE",
+			  "CAACAgQAAxkBAAEZR1BjVVQVZqxoteIz26SWDtMV9T2S5QACQQwAAs7JmFKxFa6B_hTUKyoE"]
+
+	sql = ["CAACAgQAAxkBAAEZR1RjVVQvIv-AZN6TEw2nw9u-9XK5UQACLAwAAsbkoVIlaqO0VFskBCoE",
+	         "CAACAgQAAxkBAAEZR2tjVVVBYBKQDBU0DnzL9URoet1VPgACUQsAAiU1oVJLzfHPrwlVLCoE"]
+
+	docker = ["CAACAgQAAxkBAAEZR2FjVVSpBRA0IFag8nEkG97xArVt7AACzg0AAqXNmFLnjQpwqWG-BCoE"]
+
+	general = ["CAACAgQAAxkBAAEZR2NjVVTFY6gl0DykoqJwJnP1bygXsAACXgsAAgh7oFIBM3eNs7SNRyoE",
+			   "CAACAgQAAxkBAAEZR2VjVVT32xzFQsiO3e0PTtgZ_1jclwACgwsAAgZWoVLixoKgf_yZHSoE"]
+
+	code = ["CAACAgQAAxkBAAEZR2djVVUQtuTzDRmKxflI2PHQTLYlbgACBA0AAv1umFKywVn-M1px4ioE",
+			"CAACAgQAAxkBAAEZR2ljVVUr6cKm95sB-H9uxqGeY0bVMgACbwwAAoeeoFJb1vQpOb0zCioE"]
+
+	linux = ["CAACAgQAAxkBAAEZR21jVVVeLfNWE-ymvjtlmeNJhnO_ywACSgwAAsLJoVLjssjLsuYj2SoE"]
+
+	random = ["CAACAgQAAxkBAAEZR9hjVWjM0dHlc-YobW-7ivwgU_Ic6QACIwsAAoHVsVJw7D5sBWCZfCoE",
+	          "CAACAgQAAxkBAAEZR9pjVWjw1BZkzHeekZSQc5sFG7yPSgACbg0AAu9QqVLhLqTCW-Y70SoE",
+			  "CAACAgQAAxkBAAEZR9xjVWkLXFB5Tsbc0nm0IdRhptCUZQACKgwAAiioqVINGGZkFK85wCoE"]
+	
+	stickers = {"bash" : bash , 
+				"linux" : linux , 
+				"code" : code , 
+				"cms" : cms , 
+				"docker" : docker,
+				"devops" : devops,
+				"sql" : sql,
+				"general" : general,
+				"random" : random}
     
-	def __init__(self , id , groupe_id , app , quiz_API_url , telegram_bot_url , QUIZ_API_TOKEN , TELEGRAM_API_TOKEN , parameters):
+	def __init__(self , id , groupe_id , app , quiz_urls , telegram_bot_url , TELEGRAM_API_TOKEN , parameters):
 		self.__id = id
 		self.groupe_id = groupe_id
 		QuizBot.app = app
-		self.__quiz_API_url = quiz_API_url
+		self.__quiz_urls = quiz_urls
 		self.__telegram_bot_url = telegram_bot_url
-		self.__QUIZ_API_TOKEN = QUIZ_API_TOKEN
 		self.__TELEGRAM_API_TOKEN = TELEGRAM_API_TOKEN
 		self.__set_parameters(parameters)
 		QuizBot.index = QuizBot.index + 1
@@ -121,24 +160,25 @@ class QuizBot:
 		self.__period = period
 
 
-
 	def __category_switching(self):
-		if self.__category == Category.LINUX:
-			return "Linux"
-		if self.__category == Category.BASH:
-			return "Bash"
-		elif self.__category == Category.DEVOPS:
-			return "DevOps"
-		elif self.__category == Category.CODE:
-			return "code"
-		elif self.__category == Category.CMS:
-			return "cms"
-		elif self.__category == Category.SQL:
-			return "sql"
-		elif self.__category == Category.DOCKER:
-			return "Docker"
-		elif self.__category == Category.RANDOM:
-			return "random"
+		if self.__category.lower() == "Linux".lower():
+			return  Category.LINUX
+		if self.__category.lower() == "Bash".lower():
+			return  Category.BASH
+		elif self.__category.lower() == "DevOps".lower():
+			return  Category.DEVOPS
+		elif self.__category.lower() == "code".lower():
+			return  Category.CODE
+		elif self.__category.lower() == "cms".lower():
+			return  Category.CMS
+		elif self.__category.lower() == "sql".lower():
+			return  Category.SQL
+		elif self.__category.lower() == "Docker".lower():
+			return  Category.DOCKER
+		elif self.__category.lower() == "general".lower():
+			return  Category.GENERAL
+		elif self.__category.lower() == "random".lower():
+			return Category.RANDOM
 
 
 	def __difficulty_switching(self):
@@ -155,18 +195,32 @@ class QuizBot:
 		print("limit " , self.__nbr_limite)
 		print("difficulty " , self.__difficulty)
 		print("category " , self.__category)
-		if self.__category != Category.RANDOM:
-			result = os.popen(f"""curl {self.__quiz_API_url} -G -d apiKey={self.__QUIZ_API_TOKEN}​\
-																-d category={self.__category}\
-																-d difficulty={self.__difficulty}\
-																-d limit={self.__nbr_limite}""").read()
-		else:
-			result = os.popen(f"""curl {self.__quiz_API_url} -G -d apiKey={self.__QUIZ_API_TOKEN}​\
-																-d limit={self.__nbr_limite}""").read()  
-		response = json.loads(result)
-		print(len(response))
+		from_which_api = None
+		if (self.__category_switching() == Category.BASH or self.__category_switching() == Category.CMS 
+			or self.__category_switching() == Category.CODE or self.__category_switching() == Category.DEVOPS 
+			or self.__category_switching() == Category.DOCKER or self.__category_switching() == Category.LINUX 
+			or self.__category_switching() == Category.SQL or self.__category_switching() == Category.RANDOM):
+			if self.__category_switching() != Category.RANDOM:
+				from_which_api = Api.QUIZ_API
+				result = os.popen(f"""curl {self.__quiz_urls["specific"][0]} -G -d apiKey={self.__quiz_urls["specific"][1]}​\
+																	-d category={self.__category}\
+																	-d difficulty={self.__difficulty}\
+																	-d limit={self.__nbr_limite}""").read()
+			else:
+				result = os.popen(f"""curl {self.__quiz_API_url} -G -d apiKey={self.__quiz_urls["specific"][1]}​\	
+																	-d limit={self.__nbr_limite}""").read()  
+			
+			response = json.loads(result)
+		elif self.__category_switching() == Category.GENERAL:
+			from_which_api = Api.TRIVIA_API
+			api_url = self.__quiz_urls["genral"].format(nbr_limite = self.__nbr_limite , difficulty = self.__difficulty)
+			response = requests.get(api_url)
+			response = response.json()
+			# print(response)
+		
+	
 		# print(response)
-		return self.__parse_questions(response)
+		return self.__parse_questions(response , from_which_api)
 
 
     
@@ -177,7 +231,7 @@ class QuizBot:
 		return str_tag
 
 	def __construct_last_proposition(self , nbr_propositions):
-		if(nbr_propositions < 2):
+		if(nbr_propositions <= 2):
 			return None
 
 		print(nbr_propositions)
@@ -202,7 +256,7 @@ class QuizBot:
 
 		return propositions[1:]
 
-	def __parse_questions(self , json_question):
+	def __parse_quiz_api_questions(self , json_question):
 		questions = []
 		for item in json_question:
 			#print("********************item**************************")
@@ -245,6 +299,49 @@ class QuizBot:
 		return questions
 
 
+
+	def __parse_trivia_questions(self , json_question : json):
+		results = json_question["results"]
+		questions = []
+		for item in results:
+			question_content = item['question']
+			propositions = {"question" : question_content}
+			proposed_answers = item['incorrect_answers']
+
+			nbr_propositions = 0
+			enter = False
+			correct_answer_key = None
+			for proposed_answer in proposed_answers:
+				if random.random() > 0.5 and enter == False:
+					propositions[chr(97 + nbr_propositions)] = item["correct_answer"]
+					correct_answer_key = chr(97 + nbr_propositions)
+					enter = True
+					nbr_propositions = nbr_propositions + 1
+				
+				propositions[chr(97 + nbr_propositions)] = proposed_answer
+				nbr_propositions = nbr_propositions + 1
+
+
+			if not enter:
+				propositions[chr(97 + nbr_propositions)] = item["correct_answer"]
+				correct_answer_key = chr(97 + nbr_propositions)
+				nbr_propositions = nbr_propositions + 1
+			
+			if self.__construct_last_proposition(nbr_propositions) != None:
+				propositions[chr(97 + nbr_propositions)] = self.__construct_last_proposition(nbr_propositions)
+
+			propositions['correct_answer'] = correct_answer_key
+			questions.append(propositions)
+
+		return questions
+
+
+	def __parse_questions(self , json_question : json , from_which_api : Api):
+		if from_which_api == Api.QUIZ_API:
+			return self.__parse_quiz_api_questions(json_question)
+		elif from_which_api == Api.TRIVIA_API:
+			return self.__parse_trivia_questions(json_question)
+
 	async def send_quiz(self):
 		questions = self.quiz_request()
 		if self.__category == Category.RANDOM:
@@ -252,13 +349,22 @@ class QuizBot:
 		else:
 			self.__message = self.__message.format(category = self.__category , difficulty = self.__difficulty)
 
+		sticker_to_loads = QuizBot.stickers[self.__category]
+		nbr_stickers = len(sticker_to_loads)
+		
+		sticker_index = 0
+		#on hoisi une image aleatoire que l'on va envoyé
+		if nbr_stickers > 1:
+			sticker_index = random.randint(0 , nbr_stickers - 1)
+
+		sticker_to_load = sticker_to_loads[sticker_index]
+
 		if QuizBot.app.is_connected == True:
-			await QuizBot.app.send_message(self.groupe_id , self.__message)
+			await QuizBot.app.send_sticker(self.groupe_id , sticker_to_load)
 		else:
 			async with QuizBot.app:
-				await QuizBot.app.send_message(self.groupe_id , self.__message)
+				await QuizBot.app.send_sticker(self.groupe_id , sticker_to_load)
 
-		print(type(questions))
 		for question in questions:
 			print(question)
 
@@ -311,7 +417,7 @@ class QuizBot:
 		print("enter {}" , self.__period)
 		if self.__automatic == 1 and self.__period != None:
 			if int(self.__period / 24) == 0:
-				self.__job = schedule.every(self.__period).hours.do(self.send_quiz)
+				self.__job = schedule.every(1).minute.do(self.send_quiz)
 				print("every {} hour(s)" , self.__period)
 			elif self.__period/24 == 1:
 				self.__job = schedule.every().day().at(self.__hour).do(self.send_quiz)

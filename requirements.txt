@@ -1,6 +1,6 @@
 mysql-connector-python==8.0.30
 mysql-connector-repackaged==0.3.1
-protobuf==3.20.1
+# protobuf==3.20.1
 pyaes==1.6.1
 Pyrogram==2.0.51
 PySocks==1.7.1
