@@ -35,7 +35,7 @@ class QuizBot:
 			  "CAACAgQAAxkBAAEZR1BjVVQVZqxoteIz26SWDtMV9T2S5QACQQwAAs7JmFKxFa6B_hTUKyoE"]
 
 	sql = ["CAACAgQAAxkBAAEZR1RjVVQvIv-AZN6TEw2nw9u-9XK5UQACLAwAAsbkoVIlaqO0VFskBCoE",
-	         "CAACAgQAAxkBAAEZR2tjVVVBYBKQDBU0DnzL9URoet1VPgACUQsAAiU1oVJLzfHPrwlVLCoE"]
+	       "CAACAgQAAxkBAAEZR2tjVVVBYBKQDBU0DnzL9URoet1VPgACUQsAAiU1oVJLzfHPrwlVLCoE"]
 
 	docker = ["CAACAgQAAxkBAAEZR2FjVVSpBRA0IFag8nEkG97xArVt7AACzg0AAqXNmFLnjQpwqWG-BCoE"]
 
@@ -202,15 +202,17 @@ class QuizBot:
 			or self.__category_switching() == Category.SQL or self.__category_switching() == Category.RANDOM):
 			if self.__category_switching() != Category.RANDOM:
 				from_which_api = Api.QUIZ_API
-				result = os.popen(f"""curl {self.__quiz_urls["specific"][0]} -G -d apiKey={self.__quiz_urls["specific"][1]}​\
-																	-d category={self.__category}\
-																	-d difficulty={self.__difficulty}\
-																	-d limit={self.__nbr_limite}""").read()
+				result = os.popen(f"""curl {self.__quiz_urls["specific"][0]} -G -d apiKey={self.__quiz_urls["specific"][1]}\
+																	            -d category={self.__category}\
+																	            -d difficulty={self.__difficulty}\
+																	            -d limit={self.__nbr_limite}""").read()
 			else:
-				result = os.popen(f"""curl {self.__quiz_API_url} -G -d apiKey={self.__quiz_urls["specific"][1]}​\	
-																	-d limit={self.__nbr_limite}""").read()  
-			
+				print(self.__quiz_urls["specific"][0])
+				result = os.popen(f"""curl {self.__quiz_urls["specific"][0]} -G -d apiKey={self.__quiz_urls["specific"][1]}\
+																	            -d limit={self.__nbr_limite}""").read()  
+				from_which_api = Api.QUIZ_API
 			response = json.loads(result)
+			print(response)
 		elif self.__category_switching() == Category.GENERAL:
 			from_which_api = Api.TRIVIA_API
 			api_url = self.__quiz_urls["genral"].format(nbr_limite = self.__nbr_limite , difficulty = self.__difficulty)
@@ -295,7 +297,6 @@ class QuizBot:
 				propositions['correct_answer'] = chr(97 + nbr_propositions)
 
 			questions.append(propositions)
-
 		return questions
 
 

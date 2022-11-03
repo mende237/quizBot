@@ -313,7 +313,7 @@ class BotManager:
         while True:
             # Checks whether a scheduled task
             # is pending to run or not
-            task = asyncio.create_task(asyncio.sleep(1))
+            task = asyncio.create_task(asyncio.sleep(600))
             try:
                 await task
             except asyncio.CancelledError:
@@ -321,7 +321,7 @@ class BotManager:
             
             print("cooollllllll")
             schedule.run_pending()
-            time.sleep(1)
+            # time.sleep(1)
     
 # BotManager.insert_group(user_name="tamo" , automatic="0" , nbr_limite="35" , period= "256")
 # r = BotManager.update_parameter("tamo" , difficulty="hard" , category = "window")
@@ -471,7 +471,6 @@ async def send_quiz_from_private_chat(app , message):
 
 @app.on_message(filters.command("connect") & filters.private)
 async def connect(app , message):
-    # print(message)
     informations = extract_usefull_information(message , is_private_message = True)
     username = informations["username"]
     canal_username = BotManager.parse_connect_parameter(informations["command"])
@@ -494,10 +493,16 @@ async def connect(app , message):
         print("unknow user")
 
         
+async def run_together():
+    asyncio.gather(await BotManager.schedule_quizBot() , 
+                   await idle())
+
 print("I am alive")
 app.run(BotManager.load_all(app))
 app.start()
-asyncio.gather(idle() , BotManager.schedule_quizBot())
+idle()
+# asyncio.run(run_together())
+
 # asyncio.run(BotManager.load_all(app))
 # x = threading.Thread(target=BotManager.schedule_quizBot)
 # x.start()

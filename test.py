@@ -234,8 +234,15 @@ def send_quiz():
 # asyncio.run(main())
 
 ###################################################################################################
-import requests
+import requests , os
 api_url = "https://quizapi.io/api/v1/questions?apiKey=GMtZogjvXFZHn36AIygLrNrHRrzhWmZKzySbAVYL&limit=10"
 
 response = requests.get(api_url)
 print(response.json())
+
+link = "https://quizapi.io/api/v1/questions"
+token = "GMtZogjvXFZHn36AIygLrNrHRrzhWmZKzySbAVYL"
+nbr_limite = 5
+
+result = os.popen(f"""curl {link} -G -d apiKey={token}​ \
+	                                 -d limit={nbr_limite}""").read()  
