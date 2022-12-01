@@ -6,10 +6,11 @@ import json
 import os
 from unicodedata import category
 from utils.utils import Category , Difficulty , Api
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.job import Job
 import asyncio
 from pyrogram import Client , filters , enums
-import schedule
-import time
+
 
 class QuizBot:
 	__automatic = None
@@ -18,7 +19,8 @@ class QuizBot:
 	__nbr_limite = None
 	__hour = None
 	__period = None
-	__job = None
+	__job : Job = None
+	scheduler = None
 	__message = "this series of quizz is about {category} difficulty {difficulty}"
 	app = None
 	index = 0
@@ -60,25 +62,28 @@ class QuizBot:
 				"sql" : sql,
 				"general" : general,
 				"random" : random}
-    
-	def __init__(self , id , groupe_id , app , quiz_urls , telegram_bot_url , TELEGRAM_API_TOKEN , parameters):
+
+	@classmethod
+	async def new_Bot(cls , id , groupe_id , app , quiz_urls , telegram_bot_url , TELEGRAM_API_TOKEN , parameters):
+		self = QuizBot()
 		self.__id = id
 		self.groupe_id = groupe_id
 		QuizBot.app = app
 		self.__quiz_urls = quiz_urls
 		self.__telegram_bot_url = telegram_bot_url
 		self.__TELEGRAM_API_TOKEN = TELEGRAM_API_TOKEN
-		self.__set_parameters(parameters)
+		await self.set_parameters(parameters)
 		QuizBot.index = QuizBot.index + 1
+		return self
 
-		  
-
-	def __set_parameters(self , parameters , is_init : bool = True):
+	
+	async def set_parameters(self , parameters , is_init : bool = True):
 		keys = parameters.keys()
 		modif = False
 
 		if "automatic" in keys:
 			self.__automatic = parameters["automatic"]
+			modif = True
    
 		if "category" in keys:
 			self.__category = parameters["category"]
@@ -102,44 +107,13 @@ class QuizBot:
 			
 		if is_init == False:
 			if modif == True:
-				schedule.cancel_job(self.__job)
-				self.schedule_quiz()
+				self.__job.remove()
+				await self.schedule_quiz()
 
 		print(f"automatic {self.__automatic } category {self.__category} difficulty {self.__difficulty} nbr_limte {self.__nbr_limite } hour {self.__hour } preiod {self.__period}")
 
-		
-	async def set_parameter_asynchronously(self , parameters):
-		keys = parameters.keys()
-		modif = False
-
-		if "automatic" in keys:
-			self.__automatic = parameters["automatic"]
-   
-		if "category" in keys:
-			self.__category = parameters["category"]
-
-		if "difficulty" in keys:
-			self.__difficulty = parameters["difficulty"]
-   
-		if "nbr_limite" in keys:
-			self.__nbr_limite = parameters["nbr_limite"]
-   
-		if "hour" in keys:
-			if self.__hour != parameters["hour"]:
-				modif = True
-			self.__hour = parameters["hour"]
-		
-		if "period" in keys:
-			if self.__period != parameters["period"]:
-				modif = True
-			self.__period = parameters["period"]
-			
-		if modif == True:
-			schedule.cancel_job(self.__job)
-			await self.schedule_quiz()
-
-		print(f"automatic {self.__automatic } category {self.__category} difficulty {self.__difficulty} nbr_limte {self.__nbr_limite } hour {self.__hour } preiod {self.__period}")
-
+	
+	
 	#*************************************setter**********************************
 	def set_automatic(self , automatic):
 		self.__automatic = automatic
@@ -343,6 +317,7 @@ class QuizBot:
 		elif from_which_api == Api.TRIVIA_API:
 			return self.__parse_trivia_questions(json_question)
 
+
 	async def send_quiz(self):
 		questions = self.quiz_request()
 		if self.__category == Category.RANDOM:
@@ -413,12 +388,14 @@ class QuizBot:
 				async with QuizBot.app:
 					await QuizBot.app.send_poll(self.groupe_id , question["question"] , propositions , type = enums.PollType.QUIZ , correct_option_id = index_correct)
 
+	async def test():
+		print("toto")
 		
 	async def schedule_quiz(self):
 		print("enter {}" , self.__period)
 		if self.__automatic == 1 and self.__period != None:
 			if int(self.__period / 24) == 0:
-				self.__job = schedule.every(1).minute.do(self.send_quiz)
+				self.__job = QuizBot.scheduler.add_job(QuizBot.test, "interval", seconds=3)
 				print("every {} hour(s)" , self.__period)
 			elif self.__period/24 == 1:
 				self.__job = schedule.every().day().at(self.__hour).do(self.send_quiz)
