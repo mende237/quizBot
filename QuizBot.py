@@ -321,7 +321,7 @@ class QuizBot:
 
 	async def send_quiz(self):
 		if self.__automatic == 1:
-			category_tab = ["Linux" , "Bash" , "DevOps" , "code" , "cms" , "sql" , "Docker" , "general" , "random"]
+			category_tab = ["linux" , "bash" , "devops" , "code" , "cms" , "sql" , "docker" , "general" , "random"]
 			difficulty_tab = ["easy" , "medium" , "hard"]
 			self.__category = random.choice(category_tab)
 			self.__difficulty = random.choice(difficulty_tab)
@@ -342,12 +342,12 @@ class QuizBot:
 
 		sticker_to_load = sticker_to_loads[sticker_index]
 
-		if QuizBot.app.is_connected == True:
-			await QuizBot.app.send_sticker(self.groupe_id , sticker_to_load)
-		else:
-			async with QuizBot.app:
-				await QuizBot.app.send_sticker(self.groupe_id , sticker_to_load)
-
+		# if QuizBot.app.is_connected == True:
+		# 	await QuizBot.app.send_sticker(self.groupe_id , sticker_to_load)
+		# else:
+		# 	async with QuizBot.app:
+		# 		await QuizBot.app.send_sticker(self.groupe_id , sticker_to_load)
+		print("pass sticker")
 		# for question in questions:
 		# 	print(question)
 
@@ -389,22 +389,23 @@ class QuizBot:
 			# print(index_correct)
 
 			
-			if QuizBot.app.is_connected == True:
-				await QuizBot.app.send_poll(self.groupe_id , question["question"] , propositions , type = enums.PollType.QUIZ , correct_option_id = index_correct)
-			else:
-				async with QuizBot.app:
-					await QuizBot.app.send_poll(self.groupe_id , question["question"] , propositions , type = enums.PollType.QUIZ , correct_option_id = index_correct)
+			# if QuizBot.app.is_connected == True:
+			# 	await QuizBot.app.send_poll(self.groupe_id , question["question"] , propositions , type = enums.PollType.QUIZ , correct_option_id = index_correct)
+			# else:
+			# 	async with QuizBot.app:
+			# 		await QuizBot.app.send_poll(self.groupe_id , question["question"] , propositions , type = enums.PollType.QUIZ , correct_option_id = index_correct)
 
+			print("quiz sending ............")
 
 	async def schedule_quiz(self):
 		nbr_second = 0
 		if self.__automatic == 1 and self.__period != None:
 			if int(self.__period / 24) == 0:
-				nbr_second = int(self.__period) * 3600
+				nbr_second = int(self.__period) * 60
 			else:
 				nbr_second = int(self.__period) * 3600 + self.__hour.total_seconds()
 				
-			self.__job = QuizBot.scheduler.add_job(QuizBot.send_quiz , "interval" ,args = ["self"], seconds=nbr_second)
+			self.__job = QuizBot.scheduler.add_job(QuizBot.send_quiz , "interval" ,args = [self], seconds=nbr_second)
 			
 		def __str__(self):
 			return self.groupe_id

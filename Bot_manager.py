@@ -6,10 +6,7 @@ import mysql.connector
 from utils.config import config
 from utils.utils import Category , Difficulty
 from QuizBot import QuizBot
-import asyncio
-import schedule
-import threading 
-import time
+
 
 
 class BotManager:
@@ -19,7 +16,7 @@ class BotManager:
 
 	quiz_API_url = "https://quizapi.io/api/v1/questions"
 	telegram_bot_url = "https://api.telegram.org/bot{}/{}"
-
+							  
 	quiz_urls = {"specific" : ["https://quizapi.io/api/v1/questions" , "GMtZogjvXFZHn36AIygLrNrHRrzhWmZKzySbAVYL"],
 				"genral" : "https://opentdb.com/api.php?amount={nbr_limite}&category=18&difficulty={difficulty}&encode=url3986"}
 	
