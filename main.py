@@ -1,8 +1,31 @@
+
+#  █████╗ ██╗   ██╗████████╗██╗  ██╗ ██████╗ ██████╗     ██████╗ ██╗███╗   ███╗██╗████████╗██████╗ ██╗
+# ██╔══██╗██║   ██║╚══██╔══╝██║  ██║██╔═══██╗██╔══██╗    ██╔══██╗██║████╗ ████║██║╚══██╔══╝██╔══██╗██║
+# ███████║██║   ██║   ██║   ███████║██║   ██║██████╔╝    ██║  ██║██║██╔████╔██║██║   ██║   ██████╔╝██║
+# ██╔══██║██║   ██║   ██║   ██╔══██║██║   ██║██╔══██╗    ██║  ██║██║██║╚██╔╝██║██║   ██║   ██╔══██╗██║
+# ██║  ██║╚██████╔╝   ██║   ██║  ██║╚██████╔╝██║  ██║    ██████╔╝██║██║ ╚═╝ ██║██║   ██║   ██║  ██║██║
+# ╚═╝  ╚═╝ ╚═════╝    ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝    ╚═════╝ ╚═╝╚═╝     ╚═╝╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝
+                                                                                                    
+
+					#  ██████╗ ██╗   ██╗██╗███████╗    ██████╗  ██████╗ ████████╗
+					# ██╔═══██╗██║   ██║██║╚══███╔╝    ██╔══██╗██╔═══██╗╚══██╔══╝
+					# ██║   ██║██║   ██║██║  ███╔╝     ██████╔╝██║   ██║   ██║   
+					# ██║▄▄ ██║██║   ██║██║ ███╔╝      ██╔══██╗██║   ██║   ██║   
+					# ╚██████╔╝╚██████╔╝██║███████╗    ██████╔╝╚██████╔╝   ██║   
+					#  ╚══▀▀═╝  ╚═════╝ ╚═╝╚══════╝    ╚═════╝  ╚═════╝    ╚═╝   
+                                                           
+
+
+										# ██╗   ██╗ ██╗    ██████╗ 
+										# ██║   ██║███║   ██╔═████╗
+										# ██║   ██║╚██║   ██║██╔██║
+										# ╚██╗ ██╔╝ ██║   ████╔╝██║
+										#  ╚████╔╝  ██║██╗╚██████╔╝
+										#   ╚═══╝   ╚═╝╚═╝ ╚═════╝ 
+                         
 from Bot_manager import BotManager
 from QuizBot import QuizBot
-
-import asyncio
-from pyrogram import Client , filters , enums , idle
+from pyrogram import Client , filters , idle
 
 api_id = 15150655
 api_hash = "68e947ab567a62b78c70b8243307623c"
@@ -39,7 +62,7 @@ async def register(app  , message , is_private_message = False):
 	informations = extract_usefull_information(message , is_private_message = is_private_message)
 	username = informations["username"]
 
-	print(informations)
+	# print(informations)
 
 	if is_private_message == True:
 		if message.from_user.username not in BotManager.connexions.keys():
@@ -58,14 +81,13 @@ async def register(app  , message , is_private_message = False):
 
 		bot_id = BotManager.insert_group(username , command)
 		#on verifie que l'insertion en BD c'est bien passé
-		print("bot_id %s" , bot_id)
 		if bot_id != None:
 			quizBot = await QuizBot.new_Bot(bot_id , app , username , BotManager.quiz_urls , BotManager.telegram_bot_url
 											, BotManager.TELEGRAM_API_TOKEN , command)
 			BotManager.bot_list.append(quizBot)
 			await quizBot.schedule_quiz()
-		print(command)
-		print("register your group before")
+		# print(command)
+		# print("register your group before")
 
 
 
@@ -89,8 +111,8 @@ async def update(app , message , is_private_message = False):
 
 		BotManager.update_parameter(username , command)
 		await quizBot.set_parameters(command)
-		print(command)
-		print("group already register")
+		# print(command)
+		# print("group already register")
 	else:
 		print("register your group before")
 
@@ -162,13 +184,9 @@ async def connect(app , message):
 	else:
 		print("unknow user")
 
-		
-# async def run_together():
-# 	asyncio.gather(await BotManager.schedule_quizBot() , 
-# 				   await idle())
 
 QuizBot.scheduler = BotManager.get_scheduler()
-print("I am alive")
+print("Botmanager are started .....")
 app.run(BotManager.load_all(app))
 QuizBot.scheduler.start()
 

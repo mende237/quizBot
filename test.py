@@ -236,12 +236,12 @@ import json
 ###################################################################################################
 # import requests , os
 # import urllib.parse
-# api_url = "https://opentdb.com/api.php?amount=10&category=18&difficulty=easy&encode=url3986"
+# api_url = "https://opentdb.com/api.php?amount={nbr_limite}&category=18&difficulty={difficulty}&encode=url3986"
 
 
-# response = requests.get(api_url)
+# response = requests.get(api_url.format(nbr_limite = 2 , difficulty = "easy"))
 # result = response.json()
-# urllib.parse.unquote(result)
+# # urllib.parse.unquote(result)
 # print(result)
 
 # link = "https://quizapi.io/api/v1/questions"
@@ -251,29 +251,34 @@ import json
 # result = os.popen(f"""curl {link} -G -d apiKey={token}​ \
 # 	                                 -d limit={nbr_limite}""").read()  
 
+from urllib.parse import unquote
+url = 'The%20programming%20language%20%22Python%22%20is%20based%20off%20a%20modified%20version%20of%20%22JavaScript%22'
+url = unquote(url)
+print(url)
+
 ################################################################################################
-import asyncio
+# import asyncio
 
-dsn = "..."
+# dsn = "..."
 
-class Foo(object):
-	nom = "dimitri"
+# class Foo(object):
+# 	nom = "dimitri"
 		
-	@classmethod
-	async def create(cls, settings):
-		self = Foo()
-		self.settings = settings
-		self.pool = await Foo.__create_pool(dsn)
-		return self
+# 	@classmethod
+# 	async def create(cls, settings):
+# 		self = Foo()
+# 		self.settings = settings
+# 		self.pool = await Foo.__create_pool(dsn)
+# 		return self
 
-	async def __create_pool(x):
-		print(x)
+# 	async def __create_pool(x):
+# 		print(x)
 	
 
-async def main(settings):
-	foo = await Foo.create(settings)
-	print(foo.nom)
-	print(foo.settings)
+# async def main(settings):
+# 	foo = await Foo.create(settings)
+# 	print(foo.nom)
+# 	print(foo.settings)
 
 
-asyncio.run(main('fc'))
+# asyncio.run(main('fc'))

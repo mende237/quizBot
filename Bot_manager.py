@@ -21,7 +21,7 @@ class BotManager:
 	telegram_bot_url = "https://api.telegram.org/bot{}/{}"
 
 	quiz_urls = {"specific" : ["https://quizapi.io/api/v1/questions" , "GMtZogjvXFZHn36AIygLrNrHRrzhWmZKzySbAVYL"],
-				"genral" : "https://opentdb.com/api.php?amount={nbr_limite}&category=18&difficulty={difficulty}"}
+				"genral" : "https://opentdb.com/api.php?amount={nbr_limite}&category=18&difficulty={difficulty}&encode=url3986"}
 	
 
 	#contient la liste des bots qui sont lancés
@@ -39,7 +39,7 @@ class BotManager:
 		)
 		return conn
 	
-	def get_scheduler():
+	def get_scheduler() -> AsyncIOScheduler:
 		return AsyncIOScheduler()
 	
 	#cette fonction verifie si l'identifiant du groupe passe existe dans la BD
@@ -90,14 +90,13 @@ class BotManager:
 		
 		sql = sql + ")"
 		sql = sql.format(params = params)
-		print(sql)
-		print(tuple(value))
+		# print(sql)
+		# print(tuple(value))
 		my_cursor.execute(sql , tuple(value))
 		#conn.commit()
 		#on recupere l'identifiant du bot que l'on vient d'inserer dans la BD
 		my_cursor.execute("SELECT id FROM Bot ORDER BY id DESC LIMIT 1")
 		id_Bot = (my_cursor.fetchall())[0][0]
-		print(f"dsdssdsdddddddddddddddddddddddddddddddddddddd {id_Bot}")
 		if description == None:
 			my_cursor.execute("INSERT INTO Groupe (username , id_Bot) VALUES (%s , %s)" , (user_name , str(id_Bot)))
 		else:
@@ -138,8 +137,8 @@ class BotManager:
 		
 		value.append(user_name)
 		sql = sql.format(params = params)
-		print(sql)
-		print(tuple(value))
+		# print(sql)
+		# print(tuple(value))
 		my_cursor.execute(sql , tuple(value))
 	
 		conn.commit()
@@ -183,9 +182,8 @@ class BotManager:
 		
 		
 	async def load_all(app):
-		print("*******************************************************************************")
 		conn = BotManager.connect()
-		print(conn)
+		# print(conn)
 		my_cursor = conn.cursor()
 				
 		my_cursor.execute("SELECT * FROM Bot")
@@ -199,7 +197,7 @@ class BotManager:
 			username = my_cursor.fetchall()[0][0]
 			quizBot = await QuizBot.new_Bot(line["id"] , username , app , BotManager.quiz_urls , BotManager.telegram_bot_url
 										, BotManager.TELEGRAM_API_TOKEN , line)
-			print(line)
+			# print(line)
 			BotManager.bot_list.append(quizBot)
 			await quizBot.schedule_quiz()
 		conn.close()
@@ -312,26 +310,5 @@ class BotManager:
 
 		return None
 
-	async def schedule_quizBot():
-		while True:
-			# Checks whether a scheduled task
-			# is pending to run or not
-			task = asyncio.create_task(asyncio.sleep(600))
-			try:
-				await task
-			except asyncio.CancelledError:
-				break
 			
-			print("cooollllllll")
-			schedule.run_pending()
-			# time.sleep(1)
-	
-# BotManager.insert_group(user_name="tamo" , automatic="0" , nbr_limite="35" , period= "256")
-# r = BotManager.update_parameter("tamo" , difficulty="hard" , category = "window")
-# r = BotManager.update_automatic_parameter("tamo" , difficulty="easy" , category = "window" , period = "123")
-
-# r = BotManager.update_base_parameter("tamo" , category = "window" , nbr_limite = "2" , automatic= "1")
-
-# r = BotManager.verification_BD("tamo")
-# print(r)
 
