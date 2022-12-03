@@ -57,7 +57,7 @@ def extract_usefull_information(message , is_private_message = False):
 	
 	return informations
 
-async def register(app  , message , is_private_message = False):
+async def register(app : Client , message , is_private_message = False):
 	id = message.chat.id
 	quizBot = None
 	informations = extract_usefull_information(message , is_private_message = is_private_message)
@@ -87,13 +87,15 @@ async def register(app  , message , is_private_message = False):
 			quizBot = await QuizBot.new_Bot(bot_id , app , username , BotManager.quiz_urls , BotManager.telegram_bot_url
 											, BotManager.TELEGRAM_API_TOKEN , command)
 			BotManager.bot_list.append(quizBot)
+			await app.send_message(id, "register successful")
 			await quizBot.schedule_quiz()
+
 		# print(command)
 		# print("register your group before")
 
 
 
-async def update(app , message , is_private_message = False):
+async def update(app : Client, message , is_private_message = False):
 	informations = extract_usefull_information(message , is_private_message = is_private_message)
 	username = informations["username"]
 	id = message.chat.id
@@ -119,7 +121,7 @@ async def update(app , message , is_private_message = False):
 		await app.send_message(id, "register your group before")
 
 
-async def send(app , message , is_private_message = False):
+async def send(app : Client, message , is_private_message = False):
 	id = message.chat.id
 	informations = extract_usefull_information(message , is_private_message = is_private_message)
 	username = informations["username"]
