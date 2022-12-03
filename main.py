@@ -15,7 +15,7 @@
 					#  ╚══▀▀═╝  ╚═════╝ ╚═╝╚══════╝    ╚═════╝  ╚═════╝    ╚═╝   
                                                            
 
-
+										
 										# ██╗   ██╗ ██╗    ██████╗ 
 										# ██║   ██║███║   ██╔═████╗
 										# ██║   ██║╚██║   ██║██╔██║
@@ -58,6 +58,7 @@ def extract_usefull_information(message , is_private_message = False):
 	return informations
 
 async def register(app  , message , is_private_message = False):
+	id = message.chat.id
 	quizBot = None
 	informations = extract_usefull_information(message , is_private_message = is_private_message)
 	username = informations["username"]
@@ -66,14 +67,15 @@ async def register(app  , message , is_private_message = False):
 
 	if is_private_message == True:
 		if message.from_user.username not in BotManager.connexions.keys():
-			print("connect you before")
+			await app.send_message(id, "connect you before")
 			return None
 		else:
 			username = BotManager.connexions[username]
 			
 	quizBot = BotManager.find_bot(username)
 	if quizBot != None:
-		BotManager.send_error_message("group already register")
+		# BotManager.send_error_message("group already register")
+		await app.send_message(id, "group already register")
 	else:
 		command = BotManager.parse_parameter(informations["command"])
 		if command == None or not bool(command):
@@ -94,10 +96,10 @@ async def register(app  , message , is_private_message = False):
 async def update(app , message , is_private_message = False):
 	informations = extract_usefull_information(message , is_private_message = is_private_message)
 	username = informations["username"]
-
+	id = message.chat.id
 	if is_private_message == True:
 		if message.from_user.username not in BotManager.connexions.keys():
-			print("connect you before")
+			await app.send_message(id, "connect you before")
 			return None
 		else:
 			username = BotManager.connexions[username]
@@ -106,7 +108,7 @@ async def update(app , message , is_private_message = False):
 	if quizBot != None:
 		command = BotManager.parse_parameter(informations["command"])
 		if command == None or not bool(command):
-			print("errorrrrrrrrrrrrrrrrrrr")
+			await app.send_message(id, "errorrrrrrrrrrrrrrrrrrr")
 			return None
 
 		BotManager.update_parameter(username , command)
@@ -114,15 +116,17 @@ async def update(app , message , is_private_message = False):
 		# print(command)
 		# print("group already register")
 	else:
-		print("register your group before")
+		await app.send_message(id, "register your group before")
+
 
 async def send(app , message , is_private_message = False):
+	id = message.chat.id
 	informations = extract_usefull_information(message , is_private_message = is_private_message)
 	username = informations["username"]
 
 	if is_private_message == True:
 		if message.from_user.username not in BotManager.connexions.keys():
-			print("connect you before")
+			await app.send_message(id, "connect you before")
 			return None
 		else:
 			username = BotManager.connexions[username]
@@ -131,7 +135,7 @@ async def send(app , message , is_private_message = False):
 	if quizBot != None:
 		await quizBot.send_quiz()       
 	else:
-		print("register your group before")
+		await app.send_message(id, "register your group before")
 
 
 @app.on_message(filters.command("register") & filters.channel)
@@ -163,30 +167,32 @@ async def send_quiz_from_private_chat(app , message):
 
 @app.on_message(filters.command("connect") & filters.private)
 async def connect(app , message):
+	id = message.chat.id
 	informations = extract_usefull_information(message , is_private_message = True)
 	username = informations["username"]
 	canal_username = BotManager.parse_connect_parameter(informations["command"])
 
 	if username in BotManager.connexions.keys():
-		print("you are already connect")
+		await app.send_message(id, "you are already connect")
 	else:
 		if canal_username == None:
-			print("enter a username")
+			await app.send_message(id, "enter your channel username")
 		else:
 			BotManager.connexions[username] = canal_username
-			print("connexion reussi")
+			await app.send_message(id, "success connecion")
 
 @app.on_message(filters.command("disconnect") & filters.private)
 async def connect(app , message):
+	id = message.chat.id
 	if message.from_user.username in BotManager.connexions.keys():
 		BotManager.connexions.pop(message.from_user.username)
-		print("succeful logout")
+		await app.send_message(id, "succeful logout")
 	else:
-		print("unknow user")
+		await app.send_message(id, "unknow user")
 
 
 QuizBot.scheduler = BotManager.get_scheduler()
-print("Botmanager are started .....")
+print("Botmanager is started .....")
 app.run(BotManager.load_all(app))
 QuizBot.scheduler.start()
 

@@ -166,9 +166,6 @@ class QuizBot:
 
 	def quiz_request(self):
 		result = None
-		# print("limit " , self.__nbr_limite)
-		# print("difficulty " , self.__difficulty)
-		# print("category " , self.__category)
 		from_which_api = None
 		if (self.__category_switching() == Category.BASH or self.__category_switching() == Category.CMS 
 			or self.__category_switching() == Category.CODE or self.__category_switching() == Category.DEVOPS 
@@ -181,10 +178,9 @@ class QuizBot:
 																	            -d difficulty={self.__difficulty}\
 																	            -d limit={self.__nbr_limite}""").read()
 			else:
-				print(self.__quiz_urls["specific"][0])
+				from_which_api = Api.QUIZ_API
 				result = os.popen(f"""curl {self.__quiz_urls["specific"][0]} -G -d apiKey={self.__quiz_urls["specific"][1]}\
 																	            -d limit={self.__nbr_limite}""").read()  
-				from_which_api = Api.QUIZ_API
 			response = json.loads(result)
 			# print(response)
 			
@@ -326,6 +322,7 @@ class QuizBot:
 			self.__category = random.choice(category_tab)
 			self.__difficulty = random.choice(difficulty_tab)
 	
+		# print(self.__category)
 		questions = self.quiz_request()
 		if self.__category == Category.RANDOM:
 			self.__message = "this series of quizz is a random serie"
@@ -342,12 +339,13 @@ class QuizBot:
 
 		sticker_to_load = sticker_to_loads[sticker_index]
 
-		# if QuizBot.app.is_connected == True:
-		# 	await QuizBot.app.send_sticker(self.groupe_id , sticker_to_load)
-		# else:
-		# 	async with QuizBot.app:
-		# 		await QuizBot.app.send_sticker(self.groupe_id , sticker_to_load)
-		print("pass sticker")
+		if QuizBot.app.is_connected == True:
+			await QuizBot.app.send_sticker(self.groupe_id , sticker_to_load)
+		else:
+			async with QuizBot.app:
+				await QuizBot.app.send_sticker(self.groupe_id , sticker_to_load)
+		
+		# print("pass sticker")
 		# for question in questions:
 		# 	print(question)
 
@@ -389,19 +387,19 @@ class QuizBot:
 			# print(index_correct)
 
 			
-			# if QuizBot.app.is_connected == True:
-			# 	await QuizBot.app.send_poll(self.groupe_id , question["question"] , propositions , type = enums.PollType.QUIZ , correct_option_id = index_correct)
-			# else:
-			# 	async with QuizBot.app:
-			# 		await QuizBot.app.send_poll(self.groupe_id , question["question"] , propositions , type = enums.PollType.QUIZ , correct_option_id = index_correct)
+			if QuizBot.app.is_connected == True:
+				await QuizBot.app.send_poll(self.groupe_id , question["question"] , propositions , type = enums.PollType.QUIZ , correct_option_id = index_correct)
+			else:
+				async with QuizBot.app:
+					await QuizBot.app.send_poll(self.groupe_id , question["question"] , propositions , type = enums.PollType.QUIZ , correct_option_id = index_correct)
 
-			print("quiz sending ............")
+			# print("quiz sending ............")
 
 	async def schedule_quiz(self):
 		nbr_second = 0
 		if self.__automatic == 1 and self.__period != None:
 			if int(self.__period / 24) == 0:
-				nbr_second = int(self.__period) * 60
+				nbr_second = int(self.__period) * 3600
 			else:
 				nbr_second = int(self.__period) * 3600 + self.__hour.total_seconds()
 				

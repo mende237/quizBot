@@ -1,6 +1,6 @@
 class config:
-    host = "localhost"
+    host = "containers-us-west-133.railway.app"
     user ="root"
-    password = ""
-    database = "bot_db"
-    port = 3306
+    password = "e01yHEJYCDNW9GeJWv3g"
+    database = "railway"
+    port = 7930

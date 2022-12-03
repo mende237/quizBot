@@ -55,24 +55,28 @@
 # 	schedule.run_pending()
 # 	time.sleep(1)
 
-# import os
+import os
 import json
 
-# QUIZ_API_TOKEN = "GMtZogjvXFZHn36AIygLrNrHRrzhWmZKzySbAVYL"
-# difficulty = "easy"
-# quiz_API_url = "https://quizapi.io/api/v1/questions"
-# nbr_limite = 1
-# category = "Kubernetes"
+QUIZ_API_TOKEN = "GMtZogjvXFZHn36AIygLrNrHRrzhWmZKzySbAVYL"
+difficulty = "easy"
+quiz_API_url = "https://quizapi.io/api/v1/questions"
+nbr_limite = 1
+category = "Kubernetes"
+category_tab = ["linux" , "bash" , "devops" , "code" , "cms" , "sql" , "docker" , "general" , "random"]
 
 
-# result = os.popen(f"""curl {quiz_API_url} -G -d apiKey={QUIZ_API_TOKEN}​\
-# 											 -d category={category}\
-# 											 -d difficulty={difficulty}\
-# 											 -d limit={nbr_limite}""").read()
 
-# response = json.loads(result)
+for cat in category_tab:
+	result = os.popen(f"""curl {quiz_API_url} -G -d apiKey={QUIZ_API_TOKEN}\
+											     -d category={cat}\
+										         -d difficulty={difficulty}\
+												 -d limit={nbr_limite}""").read()
 
-# print(response)
+	response = json.loads(result)
+	print(response.keys())
+
+	#print(response)
 
 # from QuizBot import QuizBot
 # import random
