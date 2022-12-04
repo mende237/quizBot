@@ -6,6 +6,7 @@ import mysql.connector
 from utils.config import config
 from utils.utils import Category , Difficulty
 from QuizBot import QuizBot
+from datetime import datetime
 
 
 
@@ -248,6 +249,9 @@ class BotManager:
 					elif value.lower() == "true".lower():
 						value = 1
 						automatic = 1
+						now = datetime.now()
+						current_time = now.strftime("%H:%M:%S")
+						parameter["hour"] = current_time
 					else:
 						print("errrrrrrrror unknow boolean")
 						return None

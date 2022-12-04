@@ -10,6 +10,7 @@ from apscheduler.job import Job
 from datetime import datetime
 from urllib.parse import unquote
 from pyrogram import Client , enums
+from datetime import datetime
 
 
 class QuizBot:
@@ -389,7 +390,7 @@ class QuizBot:
 			
 			if QuizBot.app.is_connected == True:
 				await QuizBot.app.send_poll(self.groupe_id , question["question"] , propositions , type = enums.PollType.QUIZ , correct_option_id = index_correct)
-			else:
+			else: 
 				async with QuizBot.app:
 					await QuizBot.app.send_poll(self.groupe_id , question["question"] , propositions , type = enums.PollType.QUIZ , correct_option_id = index_correct)
 
@@ -398,10 +399,20 @@ class QuizBot:
 	async def schedule_quiz(self):
 		nbr_second = 0
 		if self.__automatic == 1 and self.__period != None:
-			if int(self.__period / 24) == 0:
+			if self.__period < 24 == 0:
 				nbr_second = int(self.__period) * 3600
 			else:
-				nbr_second = int(self.__period) * 3600 + self.__hour.total_seconds()
+				now  = datetime.now()
+				to_add : datetime = None
+				if self.__hour < now:
+					to_add = now - self.__hour
+					nbr_second = int(self.__period) * 3600 - to_add.total_seconds()
+				else:
+					to_add = self.__hour - now
+					nbr_second = int(self.__period) * 3600 + to_add.total_seconds()
+
+				print(f"to_add {to_add}")
+				print(f"now {now}")
 				
 			self.__job = QuizBot.scheduler.add_job(QuizBot.send_quiz , "interval" ,args = [self], seconds=nbr_second)
 			

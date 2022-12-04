@@ -1,2 +1,4 @@
 myvenv/
-.vs
+.vs/
+my_account.session
+my_bot.session
