@@ -396,24 +396,32 @@ class QuizBot:
 
 			# print("quiz sending ............")
 
+	def __time_in_second(time : datetime) -> int:
+		return time.hour *3600 + time.minute*60 + time.second
+
 	async def schedule_quiz(self):
 		nbr_second = 0
+		hour = datetime.strptime(str(self.__hour), "%H:%M:%S")
+		print(hour)
 		if self.__automatic == 1 and self.__period != None:
 			if self.__period < 24 == 0:
 				nbr_second = int(self.__period) * 3600
 			else:
 				now  = datetime.now()
-				to_add : datetime = None
-				if self.__hour < now:
-					to_add = now - self.__hour
-					nbr_second = self.__period * 3600 - to_add.total_seconds()
+				to_add : int = 0
+				s_hour = QuizBot.__time_in_second(hour)
+				s_now = QuizBot.__time_in_second(now)
+				if s_hour < s_now:
+					to_add = s_now - s_hour
+					nbr_second = self.__period * 3600 - to_add
 				else:
-					to_add = self.__hour - now
-					nbr_second = self.__period * 3600 + to_add.total_seconds()
+					to_add = s_hour - s_now
+					nbr_second = self.__period * 3600 + to_add
 
 				print(f"date time {now}")
-				print(f"to_add {to_add}")
 				print(f"now {now}")
+				print(f"to_add {to_add}")
+				print(f"nbr_second {nbr_second}")
 				
 			self.__job = QuizBot.scheduler.add_job(QuizBot.send_quiz , "interval" ,args = [self], seconds=nbr_second)
 			
