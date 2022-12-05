@@ -406,11 +406,12 @@ class QuizBot:
 				to_add : datetime = None
 				if self.__hour < now:
 					to_add = now - self.__hour
-					nbr_second = int(self.__period) * 3600 - to_add.total_seconds()
+					nbr_second = self.__period * 3600 - to_add.total_seconds()
 				else:
 					to_add = self.__hour - now
-					nbr_second = int(self.__period) * 3600 + to_add.total_seconds()
+					nbr_second = self.__period * 3600 + to_add.total_seconds()
 
+				print(f"date time {now}")
 				print(f"to_add {to_add}")
 				print(f"now {now}")
 				
