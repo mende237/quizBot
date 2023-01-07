@@ -3,8 +3,6 @@ myvenv/
 my_account.session
 my_bot.session
 
-*.log
-*.pot
-*.pyc
+.env
 __pycache__
 
