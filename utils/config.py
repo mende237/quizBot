@@ -1,7 +1,7 @@
 class config:
     host = "containers-us-west-133.railway.app"
     user ="root"
-    password = "e01yHEJYCDNW9GeJWv3g"
+    password = "PyX1zXdedWA0zJ2ZqHt1"
     database = "railway"
     port = 7930
 
