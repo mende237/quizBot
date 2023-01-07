@@ -1,2 +1,10 @@
-myvenv
-.vs
+myvenv/
+.vs/
+my_account.session
+my_bot.session
+
+*.log
+*.pot
+*.pyc
+__pycache__
+
