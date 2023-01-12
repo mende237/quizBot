@@ -1,4 +1,3 @@
-#!/home/dimitri/Quiz_bot/myvenv/bin python
 from http import client
 from unittest import async_case
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -11,14 +10,14 @@ from datetime import datetime
 
 
 class BotManager:
-	QUIZ_API_TOKEN = "GMtZogjvXFZHn36AIygLrNrHRrzhWmZKzySbAVYL"
-	TELEGRAM_API_TOKEN = "5401510818:AAF9L3gnfKEUzzk06JDe1U0Sm1bNBhkLpUg"
+	QUIZ_API_TOKEN = ""
+	TELEGRAM_API_TOKEN = ""
 
 
 	quiz_API_url = "https://quizapi.io/api/v1/questions"
 	telegram_bot_url = "https://api.telegram.org/bot{}/{}"
 							  
-	quiz_urls = {"specific" : ["https://quizapi.io/api/v1/questions" , "GMtZogjvXFZHn36AIygLrNrHRrzhWmZKzySbAVYL"],
+	quiz_urls = {"specific" : ["https://quizapi.io/api/v1/questions" , QUIZ_API_TOKEN],
 				"genral" : "https://opentdb.com/api.php?amount={nbr_limite}&category=18&difficulty={difficulty}&encode=url3986"}
 	
 
