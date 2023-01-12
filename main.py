@@ -27,10 +27,13 @@ from Bot_manager import BotManager
 from QuizBot import QuizBot
 from pyrogram import Client , filters , idle
 
+import locale
+from decouple import config
+config.encoding = locale.getpreferredencoding(False)
 
-api_id = 15150655
-api_hash = "68e947ab567a62b78c70b8243307623c"
-bot_token = "5401510818:AAF9L3gnfKEUzzk06JDe1U0Sm1bNBhkLpUg"
+api_id = config('TELEGRAM_API_ID')
+api_hash = config('TELEGRAM_API_HASH')
+bot_token = config('TELEGRAM_API_TOKEN')
 
 app = Client(
 	"my_bot",
