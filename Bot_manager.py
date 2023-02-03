@@ -2,7 +2,8 @@ from http import client
 from unittest import async_case
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import mysql.connector
-from utils.config import config
+from decouple import config
+import locale
 from utils.utils import Category , Difficulty
 from QuizBot import QuizBot
 from datetime import datetime
@@ -27,12 +28,13 @@ class BotManager:
 	connexions = {}
 	
 	def connect():
+		config.encoding = locale.getpreferredencoding(False)
 		conn = mysql.connector.connect(
-			host = config.host,
-			user = config.user,
-			passwd = config.password,
-			database = config.database,
-			port = config.port
+			host = config('HOST'),
+			user = config('USER'),
+			passwd = config('PASSWORD'),
+			database = config('DATA_BASE'),
+			port = config('PORT'),
 		)
 		return conn
 	
