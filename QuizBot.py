@@ -418,7 +418,6 @@ class QuizBot:
 					to_add = s_hour - s_now
 					nbr_second = self.__period * 3600 + to_add
 
-				print(f"date time {now}")
 				print(f"now {now}")
 				print(f"to_add {to_add}")
 				print(f"nbr_second {nbr_second}")
