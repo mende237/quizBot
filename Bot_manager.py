@@ -32,7 +32,7 @@ class BotManager:
 		conn = mysql.connector.connect(
 			host = config('HOST'),
 			user = config('USER'),
-			passwd = config('PASSWORD'),
+			passwd = config('DB_PASS'),
 			database = config('DATA_BASE'),
 			port = config('PORT'),
 		)
