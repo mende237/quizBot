@@ -2,7 +2,7 @@ myvenv/
 .vs/
 my_account.session
 my_bot.session
-
+my_bot.session-journal
 .env
 __pycache__
 

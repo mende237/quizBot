@@ -55,28 +55,28 @@
 # 	schedule.run_pending()
 # 	time.sleep(1)
 
-# import os
-# import json
+import os
+import json
 
-# QUIZ_API_TOKEN = "GMtZogjvXFZHn36AIygLrNrHRrzhWmZKzySbAVYL"
-# difficulty = "easy"
-# quiz_API_url = "https://quizapi.io/api/v1/questions"
-# nbr_limite = 1
-# category = "Kubernetes"
-# category_tab = ["linux" , "bash" , "devops" , "code" , "cms" , "sql" , "docker" , "general" , "random"]
+QUIZ_API_TOKEN = "BibIfNJB1WMuZkI0rlUqEpvzNMCT77ZkFNizwhz4"
+difficulty = "easy"
+quiz_API_url = "https://quizapi.io/api/v1/questions"
+nbr_limite = 1
+category = "Kubernetes"
+category_tab = ["linux" , "bash" , "devops" , "code" , "cms" , "sql" , "docker" , "general" , "random"]
 
 
 
-# for cat in category_tab:
-# 	result = os.popen(f"""curl {quiz_API_url} -G -d apiKey={QUIZ_API_TOKEN}\
-# 											     -d category={cat}\
-# 										         -d difficulty={difficulty}\
-# 												 -d limit={nbr_limite}""").read()
+for cat in category_tab:
+	result = os.popen(f"""curl {quiz_API_url} -G -d apiKey={QUIZ_API_TOKEN}\
+											     -d category={cat}\
+										         -d difficulty={difficulty}\
+												 -d limit={nbr_limite}""").read()
 
-# 	response = json.loads(result)
-# 	print(response.keys())
+	response = json.loads(result)
+	# print(response.keys())
 
-	#print(response)
+	print(response)
 
 # from QuizBot import QuizBot
 # import random

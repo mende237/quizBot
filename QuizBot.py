@@ -98,6 +98,7 @@ class QuizBot:
    
 		if "hour" in keys and parameters["hour"] != None:
 			if self.__hour != parameters["hour"]:
+				print("$$$$$$$$$$$$$$$$$$$$$****************************$$$$$$$$$$$$$$$$$$$$$$$$")
 				modif = True
 			self.__hour = parameters["hour"]
 		
@@ -106,12 +107,12 @@ class QuizBot:
 				modif = True
 			self.__period = parameters["period"]
 			
+		print(f"automatic {self.__automatic } category {self.__category} difficulty {self.__difficulty} nbr_limte {self.__nbr_limite } hour {self.__hour } preiod {self.__period}")
 		if is_init == False:
 			if modif == True:
 				self.__job.remove()
 				await self.schedule_quiz()
 
-		# print(f"automatic {self.__automatic } category {self.__category} difficulty {self.__difficulty} nbr_limte {self.__nbr_limite } hour {self.__hour } preiod {self.__period}")
 
 	
 	
@@ -178,12 +179,14 @@ class QuizBot:
 																	            -d category={self.__category}\
 																	            -d difficulty={self.__difficulty}\
 																	            -d limit={self.__nbr_limite}""").read()
+				temp = self.__quiz_urls["specific"][1]
+				print(f"$$$ api_key {temp} category {self.__category} difficulty {self.__difficulty} limit {self.__nbr_limite}")
 			else:
 				from_which_api = Api.QUIZ_API
 				result = os.popen(f"""curl {self.__quiz_urls["specific"][0]} -G -d apiKey={self.__quiz_urls["specific"][1]}\
 																	            -d limit={self.__nbr_limite}""").read()  
 			response = json.loads(result)
-			# print(response)
+			print(response)
 			
 		elif self.__category_switching() == Category.GENERAL:
 			from_which_api = Api.TRIVIA_API
@@ -401,12 +404,12 @@ class QuizBot:
 
 	async def schedule_quiz(self):
 		nbr_second = 0
-		hour = datetime.strptime(str(self.__hour), "%H:%M:%S")
-		print(hour)
 		if self.__automatic == 1 and self.__period != None:
 			if self.__period < 24 == 0:
 				nbr_second = int(self.__period) * 3600
 			else:
+				hour = datetime.strptime(str(self.__hour), "%H:%M:%S")
+				print(hour)
 				now  = datetime.now()
 				to_add : int = 0
 				s_hour = QuizBot.__time_in_second(hour)

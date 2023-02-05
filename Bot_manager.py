@@ -3,7 +3,6 @@ from unittest import async_case
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import mysql.connector
 from decouple import config
-import locale
 from utils.utils import Category , Difficulty
 from QuizBot import QuizBot
 from datetime import datetime
@@ -11,14 +10,13 @@ from datetime import datetime
 
 
 class BotManager:
-	QUIZ_API_TOKEN = ""
 	TELEGRAM_API_TOKEN = ""
 
 
 	quiz_API_url = "https://quizapi.io/api/v1/questions"
 	telegram_bot_url = "https://api.telegram.org/bot{}/{}"
 							  
-	quiz_urls = {"specific" : ["https://quizapi.io/api/v1/questions" , QUIZ_API_TOKEN],
+	quiz_urls = {"specific" : ["https://quizapi.io/api/v1/questions"],
 				"genral" : "https://opentdb.com/api.php?amount={nbr_limite}&category=18&difficulty={difficulty}&encode=url3986"}
 	
 
@@ -28,13 +26,13 @@ class BotManager:
 	connexions = {}
 	
 	def connect():
-		config.encoding = locale.getpreferredencoding(False)
+		# config.encoding = locale.getpreferredencoding(False)
 		conn = mysql.connector.connect(
 			host = config('HOST'),
-			user = config('USER'),
+			user = config('DB_USER'),
 			passwd = config('DB_PASS'),
 			database = config('DATA_BASE'),
-			port = config('PORT'),
+			port = config('PORT', cast = int),
 		)
 		return conn
 	
@@ -194,6 +192,7 @@ class BotManager:
 		for line in data:
 			my_cursor.execute("SELECT username FROM Groupe where id_Bot = %s" , (line["id"],))
 			username = my_cursor.fetchall()[0][0]
+			# print(f"$$$$$$$$$$$$$$$$$$$$ load all {BotManager.quiz_urls} $$$$$$$$$$$$$$$$$$$$$$")
 			quizBot = await QuizBot.new_Bot(line["id"] , username , app , BotManager.quiz_urls , BotManager.telegram_bot_url
 										, BotManager.TELEGRAM_API_TOKEN , line)
 			# print(line)

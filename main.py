@@ -30,7 +30,8 @@ bot_token = config('TELEGRAM_API_TOKEN')
 QUIZ_API_TOKEN = config('QUIZ_API_TOKEN')
 TELEGRAM_API_TOKEN = config('TELEGRAM_API_TOKEN')
 
-BotManager.QUIZ_API_TOKEN = QUIZ_API_TOKEN
+
+BotManager.quiz_urls["specific"].append(QUIZ_API_TOKEN)
 BotManager.TELEGRAM_API_TOKEN = TELEGRAM_API_TOKEN
 
 app = Client(
