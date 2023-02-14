@@ -55,28 +55,28 @@
 # 	schedule.run_pending()
 # 	time.sleep(1)
 
-import os
-import json
+# import os
+# import json
 
-QUIZ_API_TOKEN = "BibIfNJB1WMuZkI0rlUqEpvzNMCT77ZkFNizwhz4"
-difficulty = "easy"
-quiz_API_url = "https://quizapi.io/api/v1/questions"
-nbr_limite = 1
-category = "Kubernetes"
-category_tab = ["linux" , "bash" , "devops" , "code" , "cms" , "sql" , "docker" , "general" , "random"]
+# QUIZ_API_TOKEN = "BibIfNJB1WMuZkI0rlUqEpvzNMCT77ZkFNizwhz4"
+# difficulty = "easy"
+# quiz_API_url = "https://quizapi.io/api/v1/questions"
+# nbr_limite = 1
+# category = "Kubernetes"
+# category_tab = ["linux" , "bash" , "devops" , "code" , "cms" , "sql" , "docker" , "general" , "random"]
 
 
 
-for cat in category_tab:
-	result = os.popen(f"""curl {quiz_API_url} -G -d apiKey={QUIZ_API_TOKEN}\
-											     -d category={cat}\
-										         -d difficulty={difficulty}\
-												 -d limit={nbr_limite}""").read()
+# for cat in category_tab:
+# 	result = os.popen(f"""curl {quiz_API_url} -G -d apiKey={QUIZ_API_TOKEN}\
+# 											     -d category={cat}\
+# 										         -d difficulty={difficulty}\
+# 												 -d limit={nbr_limite}""").read()
 
-	response = json.loads(result)
-	# print(response.keys())
+# 	response = json.loads(result)
+# 	# print(response.keys())
 
-	print(response)
+# 	print(response)
 
 # from QuizBot import QuizBot
 # import random
@@ -286,6 +286,70 @@ for cat in category_tab:
 
 
 # asyncio.run(main('fc'))
+# from datetime import datetime
+# now  = datetime.now()
+# print(type(now))
+
+
+# from pyrogram import Client , filters , idle
+# from pyrogram.raw.functions.messages.get_poll_results import GetPollResults
+# from pyrogram.raw.functions.messages.get_poll_votes import GetPollVotes
+# from pyrogram.raw.functions.messages import send_vote
+# from pyrogram.raw.types.input_peer_chat import InputPeerChat
+
+# from datetime import datetime
+# from datetime import time
+
+# import locale
+# from decouple import config
+# config.encoding = locale.getpreferredencoding(False)
+
+# api_id = config('TELEGRAM_API_ID')
+# api_hash = config('TELEGRAM_API_HASH')
+# bot_token = config('TELEGRAM_API_TOKEN')
+
+
+# app:Client = Client(
+# 	"my_bot",
+# 	api_id=api_id, 
+# 	api_hash=api_hash,
+# 	bot_token=bot_token
+# )
+
+# poll = None
+# @app.on_message(filters.command("toto"))
+# async def send_quiz_from_channel(app , message):
+# 	global poll
+# 	date = datetime(2023, 2, 11, 20, 46 , 00, 342380)
+# 	poll = await app.send_poll("Ox00000d3", "Is this a poll question?", ["Yes", "No", "Maybe"] , close_date=date)
+	
+
+# @app.on_message(filters.command("result"))
+# async def send_quiz_from_channel(app , message):
+# 	# peer = InputPeerChat(chat_id=612854049)
+# 	# result = GetPollResults(peer=peer , msg_id=poll.id)
+# 	result =  await app.get_messages(612854049 , poll.id)
+# 	print(result)
+
+
+# app.start()
+# idle()
+# app.stop()
+import requests
 from datetime import datetime
-now  = datetime.now()
-print(type(now))
+response = requests.get("https://api.ipgeolocation.io/timezone?apiKey=59ead1eb18c74e4a87589e2adcedb558&tz=Africa/Douala")
+print(response.status_code)
+# result = response.json()
+result_json = response.json()
+print(result_json['date_time'])
+
+date_time = result_json["date_time"].split(" ")
+date = date_time[0]
+time = date_time[1]
+date_tab = date.split("-")
+time_tab = time.split(":")
+time = datetime(int(date_tab[0]) , int(date_tab[1]) , int(date_tab[2]) , int(time_tab[0]) , int(time_tab[1]) , int(time_tab[2]))
+print(time)
+
+
+

@@ -17,6 +17,7 @@
 from Bot_manager import BotManager
 from QuizBot import QuizBot
 from pyrogram import Client , filters , idle
+from pyrogram.raw.functions.messages.get_poll_results import GetPollResults
 
 import locale
 from decouple import config
@@ -44,7 +45,6 @@ app = Client(
 
 
 def extract_usefull_information(message , is_private_message = False):
-
 	username = None
 	if is_private_message == True:
 		username = message.from_user.username
@@ -200,6 +200,7 @@ QuizBot.scheduler = BotManager.get_scheduler()
 print("Botmanager is started .....")
 app.run(BotManager.load_all(app))
 QuizBot.scheduler.start()
+
 
 app.start()
 idle()

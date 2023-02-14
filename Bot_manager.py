@@ -12,7 +12,7 @@ from datetime import datetime
 class BotManager:
 	TELEGRAM_API_TOKEN = ""
 
-
+	
 	quiz_API_url = "https://quizapi.io/api/v1/questions"
 	telegram_bot_url = "https://api.telegram.org/bot{}/{}"
 							  
@@ -47,7 +47,7 @@ class BotManager:
 				
 		my_cursor.execute("SELECT username FROM Groupe WHERE username = %s" , (groupe_id,))
 		results = my_cursor.fetchall()
-		print(type(results))
+		# print(type(results))
 		for x in results:
 			if x[0] == groupe_id:
 				conn.close()
@@ -57,7 +57,7 @@ class BotManager:
 		return 0
 	
 	#cette fonction insere le goupe et le bot associe dans la base de donne
-	#si tout ce passe bien elle retoure l'identifiant du bot au cas contraire elle retourne None4
+	#si tout ce passe bien elle retoure l'identifiant du bot au cas contraire elle retourne None
 	def insert_group(user_name , parameters , description = None):
 		conn = BotManager.connect()
 		my_cursor = conn.cursor()
@@ -185,15 +185,16 @@ class BotManager:
 				
 		my_cursor.execute("SELECT * FROM Bot")
 		results = my_cursor.fetchall()
+		print(results)
 		#on selectionne tous les entêtes sauf username_Groupe
-		column_names = [i[0] for i in my_cursor.description if i[0] != 'username_Groupe']
+		column_names = [i[0] for i in my_cursor.description]
 		data = [dict(zip(column_names , row)) for row in results]
 		
 		for line in data:
 			my_cursor.execute("SELECT username FROM Groupe where id_Bot = %s" , (line["id"],))
 			username = my_cursor.fetchall()[0][0]
 			# print(f"$$$$$$$$$$$$$$$$$$$$ load all {BotManager.quiz_urls} $$$$$$$$$$$$$$$$$$$$$$")
-			quizBot = await QuizBot.new_Bot(line["id"] , username , app , BotManager.quiz_urls , BotManager.telegram_bot_url
+			quizBot = await QuizBot.new_Bot(line["id"] , line["username_Groupe"] , line['time_zone'], app , BotManager.quiz_urls , BotManager.telegram_bot_url
 										, BotManager.TELEGRAM_API_TOKEN , line)
 			# print(line)
 			BotManager.bot_list.append(quizBot)
@@ -218,7 +219,8 @@ class BotManager:
 		automatic = None
 		hour = None
 		period = None
-		
+		time_zone = None
+
 		parameter = {}
 		
 		if (len(command) - 1) % 2 == 0:
@@ -281,7 +283,11 @@ class BotManager:
 					else:
 						print("errrrorrrr can able to format period")
 						return None
-					
+
+				if attribut.lower() == "time_zone".lower():
+					time_zone = value
+					parameter["time_zone"] = time_zone
+
 			return parameter
 		else:
 			print("command errrrrorrrr")

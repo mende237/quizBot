@@ -1,8 +1,8 @@
 myvenv/
 .vs/
+.vscode/
 my_account.session
 my_bot.session
 my_bot.session-journal
 .env
 __pycache__
-

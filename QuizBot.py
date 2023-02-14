@@ -11,6 +11,8 @@ from datetime import datetime
 from urllib.parse import unquote
 from pyrogram import Client , enums
 from datetime import datetime
+import locale
+from decouple import config
 
 
 class QuizBot:
@@ -21,6 +23,9 @@ class QuizBot:
 	__hour : datetime = None
 	__period = None
 	__job : Job = None
+	__time_zone : str = None
+	__api_time_url = "https://api.ipgeolocation.io/timezone?apiKey={api_key}&tz={time_zone}/{city}"
+
 	__message = "this series of quizz is about {category} difficulty {difficulty}"
 
 	#scheduler static variable
@@ -66,10 +71,11 @@ class QuizBot:
 				"random" : random}
 
 	@classmethod
-	async def new_Bot(cls , id , groupe_id , app , quiz_urls , telegram_bot_url , TELEGRAM_API_TOKEN , parameters):
+	async def new_Bot(cls , id , groupe_id , time_zone , app , quiz_urls , telegram_bot_url , TELEGRAM_API_TOKEN , parameters):
 		self = QuizBot()
 		self.__id = id
 		self.groupe_id = groupe_id
+		self.__time_zone = time_zone
 		QuizBot.app = app
 		self.__quiz_urls = quiz_urls
 		self.__telegram_bot_url = telegram_bot_url
@@ -107,7 +113,7 @@ class QuizBot:
 				modif = True
 			self.__period = parameters["period"]
 			
-		print(f"automatic {self.__automatic } category {self.__category} difficulty {self.__difficulty} nbr_limte {self.__nbr_limite } hour {self.__hour } preiod {self.__period}")
+		print(f"automatic {self.__automatic } time zone {self.__time_zone} category {self.__category} difficulty {self.__difficulty} nbr_limte {self.__nbr_limite } hour {self.__hour } preiod {self.__period}")
 		if is_init == False:
 			if modif == True:
 				self.__job.remove()
@@ -402,6 +408,23 @@ class QuizBot:
 	def __time_in_second(time : datetime) -> int:
 		return time.hour *3600 + time.minute*60 + time.second
 
+
+	def __get_time(self)-> datetime:
+		config.encoding = locale.getpreferredencoding(False)
+		api_key = config("API_TIME_ZONE_KEY")
+		tab = self.__time_zone.splite("/")
+		time_zone = tab[0]
+		city = tab[1]
+		response = requests.get(self.__api_time_url.format(api_key=api_key , time_zone = time_zone , city = city))
+		result_json = response.json()
+		date_time = result_json["date_time"].split(" ")
+		date = date_time[0]
+		time = date_time[1]
+		date_tab = date.split("-")
+		time_tab = time.split(":")
+		return datetime(int(date_tab[0]) , int(date_tab[1]) , int(date_tab[2]) , int(time_tab[0]) , int(time_tab[1]) , int(time_tab[2]))
+
+
 	async def schedule_quiz(self):
 		nbr_second = 0
 		if self.__automatic == 1 and self.__period != None:
@@ -410,7 +433,7 @@ class QuizBot:
 			else:
 				hour = datetime.strptime(str(self.__hour), "%H:%M:%S")
 				print(hour)
-				now  = datetime.now()
+				now  = self.__get_time()
 				to_add : int = 0
 				s_hour = QuizBot.__time_in_second(hour)
 				s_now = QuizBot.__time_in_second(now)
