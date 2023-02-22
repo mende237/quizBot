@@ -337,19 +337,22 @@
 # app.stop()
 import requests
 from datetime import datetime
-response = requests.get("https://api.ipgeolocation.io/timezone?apiKey=59ead1eb18c74e4a87589e2adcedb558&tz=Africa/Douala")
-print(response.status_code)
-# result = response.json()
-result_json = response.json()
-print(result_json['date_time'])
+# response = requests.get("https://api.ipgeolocation.io/timezone?apiKey=59ead1eb18c74e4a87589e2adcedb558&tz=Africa/Douala")
+# print(response.status_code)
+# # result = response.json()
+# result_json = response.json()
+# print(result_json['date_time'])
 
-date_time = result_json["date_time"].split(" ")
-date = date_time[0]
-time = date_time[1]
-date_tab = date.split("-")
-time_tab = time.split(":")
-time = datetime(int(date_tab[0]) , int(date_tab[1]) , int(date_tab[2]) , int(time_tab[0]) , int(time_tab[1]) , int(time_tab[2]))
-print(time)
+# date_time = result_json["date_time"].split(" ")
+# date = date_time[0]
+# time = date_time[1]
+# date_tab = date.split("-")
+# time_tab = time.split(":")
+# time = datetime(int(date_tab[0]) , int(date_tab[1]) , int(date_tab[2]) , int(time_tab[0]) , int(time_tab[1]) , int(time_tab[2]))
+# print(time)
+toto = datetime.now()
+print(toto.date())
+
 
 
 
