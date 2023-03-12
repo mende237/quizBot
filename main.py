@@ -87,7 +87,7 @@ async def register(app : Client , message , is_private_message = False):
 		bot_id = BotManager.insert_group(username , command)
 		#on verifie que l'insertion en BD c'est bien passé
 		if bot_id != None:
-			quizBot = await QuizBot.new_Bot(bot_id , app , username , BotManager.quiz_urls , BotManager.telegram_bot_url
+			quizBot = await QuizBot.new_Bot(bot_id , app , username , command["TIMEZONE"],  BotManager.quiz_urls , BotManager.telegram_bot_url
 											, BotManager.TELEGRAM_API_TOKEN , command)
 			BotManager.bot_list.append(quizBot)
 			await app.send_message(id, "register successful")
@@ -137,8 +137,9 @@ async def send(app : Client, message , is_private_message = False):
 			username = BotManager.connexions[username]
 
 	quizBot = BotManager.find_bot(username)
+	conn = connect()
 	if quizBot != None:
-		await quizBot.send_quiz()       
+		await quizBot.send_quiz(conn)       
 	else:
 		await app.send_message(id, "register your group before")
 
@@ -184,7 +185,7 @@ async def connect(app , message):
 			await app.send_message(id, "enter your channel username")
 		else:
 			BotManager.connexions[username] = canal_username
-			await app.send_message(id, "success connecion")
+			await app.send_message(id, "success connexion")
 
 @app.on_message(filters.command("disconnect") & filters.private)
 async def connect(app , message):

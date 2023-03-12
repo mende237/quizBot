@@ -335,8 +335,8 @@
 # app.start()
 # idle()
 # app.stop()
-import requests
-from datetime import datetime
+# import requests
+# from datetime import datetime
 # response = requests.get("https://api.ipgeolocation.io/timezone?apiKey=59ead1eb18c74e4a87589e2adcedb558&tz=Africa/Douala")
 # print(response.status_code)
 # # result = response.json()
@@ -350,9 +350,75 @@ from datetime import datetime
 # time_tab = time.split(":")
 # time = datetime(int(date_tab[0]) , int(date_tab[1]) , int(date_tab[2]) , int(time_tab[0]) , int(time_tab[1]) , int(time_tab[2]))
 # print(time)
-toto = datetime.now()
-print(toto.date())
+# toto = datetime.now()
+# print(toto.date())
+# print(toto.strftime("%Y:%m:%d"))
 
 
+from Vote import Vote
+from datetime import datetime
+import datetime as dt
+import mysql.connector
+from decouple import config
+from utils.utils import VoteName
+
+vote = Vote(109 , VoteName.CHOICE_QUESTIONS_TYPE , "description" , datetime.now() , 3)
+
+conn = mysql.connector.connect(
+			host = config('HOST'),
+			user = config('DB_USER'),
+			passwd = config('DB_PASS'),
+			database = config('DATA_BASE'),
+			port = config('PORT', cast = int),
+		)
 
 
+import locale
+from pyrogram import Client , filters , idle
+from decouple import config
+config.encoding = locale.getpreferredencoding(False)
+
+api_id = config('TELEGRAM_API_ID')
+api_hash = config('TELEGRAM_API_HASH')
+bot_token = config('TELEGRAM_API_TOKEN')
+
+
+QUIZ_API_TOKEN = config('QUIZ_API_TOKEN')
+TELEGRAM_API_TOKEN = config('TELEGRAM_API_TOKEN')
+
+
+app = Client(
+	"my_bot",
+	api_id=api_id, 
+	api_hash=api_hash,
+	bot_token=bot_token
+)
+
+
+# Initializing a date and time
+
+
+# print(Vote.get_vote(conn , VoteName.CHOICE_QUESTIONS_TYPE))
+
+# INSERT INTO VOTE (VOTE_ID , ID , NAME , VOTE_DATE , VOTE_DESCRIPTION) 
+# VALUES (106, 3 , "question_type" , "2023:03:10" , "description");
+
+
+@app.on_message(filters.command("toto"))
+async def send_quiz_from_channel(app , message):
+    date_and_time = datetime.now()
+    # Calling the timedelta() function 
+    time_change = dt.timedelta(minutes=10)
+    new_time = date_and_time + time_change
+    poll_id = await Vote.send(app , "Ox00000d3" , "Is this a poll question?", ["Yes", "No", "Maybe"] , new_time)
+    print(poll_id)
+	
+@app.on_message(filters.command("results"))
+async def send_quiz_from_channel(app , message):
+    results = await Vote.get_result(app , "Ox00000d3" , 524)
+    print(results)
+    
+
+app.start()
+idle()
+app.stop()

@@ -1,77 +1,44 @@
-#!/home/dimitri/Quiz_bot/myvenv/bin python
 import os
 import random
 import requests
 import json
-import os
-from utils.utils import Category , Difficulty , Api
+from utils.utils import Category , Difficulty , Api ,VoteName , CATEGORY_TAB , DIFFICULTY_TAB , connect 
+from utils.TimeManagement import get_time , time_in_second
+from utils.StickersManagement import STICKERS
+from Vote import Vote
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from  mysql.connector import MySQLConnection
 from apscheduler.job import Job
 from datetime import datetime
 from urllib.parse import unquote
 from pyrogram import Client , enums
-from datetime import datetime
+from pyrogram import Client
 import locale
 from decouple import config
 
 
 class QuizBot:
 	__automatic = 0
-	__category = "general"
-	__difficulty = "easy"
-	__nbr_limite = 5
-	__hour : datetime = None
+	__category : str = "general"
+	__difficulty : str= "easy"
+	__nbr_limite : int = 5
+	__hour : datetime = datetime.now()
 	__period = None
 	__job : Job = None
 	__time_zone : str = None
-	__api_time_url = "https://api.ipgeolocation.io/timezone?apiKey={api_key}&tz={time_zone}/{city}"
-
+	__democracy : bool = True
+	__evaluation_period : int = 7
+	__response_time : int = 60
+	
 	__message = "this series of quizz is about {category} difficulty {difficulty}"
 
 	#scheduler static variable
 	scheduler : AsyncIOScheduler = None
 	app : Client = None
 	index = 0
-	bash = ["CAACAgQAAxkBAAEZRzRjVVEnAYdigEUWUHc0M5WsgySOZQACSAsAAi7kmFKpMpEkFUXnUCoE",
-			"CAACAgQAAxkBAAEZR0BjVVM4SSpUPRb314GRk4hRI7U7bAACcg4AAirXoVIWHf4FJ_SA8SoE",
-			"CAACAgQAAxkBAAEZR0JjVVNM8PorBv2LIjBW2KHufcgeowACiQsAAh0LoFJ6drJASNHiRSoE"]
-
-	cms = ["CAACAgQAAxkBAAEZR0RjVVNvoG8Y4tpzuFlwTFCk-2zHIAAC4QwAAupHoFKbhFiwc26_ASoE",
-		   "CAACAgQAAxkBAAEZR0ZjVVOOd4_ysNAhDkURZVhLVo9wJQACIgwAAkMHoFIwP8IjwWywBioE",
-		   "CAACAgQAAxkBAAEZR0pjVVOpfLH_rGcjCoqB_v9sUfIvhAACHQ0AAk__mFJODZOy7sMSCioE"]
-
-	devops = ["CAACAgQAAxkBAAEZR0xjVVPEJSWq-R5d0XRepEz-lZSPsAAClw0AAleJmFL8HOmX5lCDISoE",
-			  "CAACAgQAAxkBAAEZR1BjVVQVZqxoteIz26SWDtMV9T2S5QACQQwAAs7JmFKxFa6B_hTUKyoE"]
-
-	sql = ["CAACAgQAAxkBAAEZR1RjVVQvIv-AZN6TEw2nw9u-9XK5UQACLAwAAsbkoVIlaqO0VFskBCoE",
-	       "CAACAgQAAxkBAAEZR2tjVVVBYBKQDBU0DnzL9URoet1VPgACUQsAAiU1oVJLzfHPrwlVLCoE"]
-
-	docker = ["CAACAgQAAxkBAAEZR2FjVVSpBRA0IFag8nEkG97xArVt7AACzg0AAqXNmFLnjQpwqWG-BCoE"]
-
-	general = ["CAACAgQAAxkBAAEZR2NjVVTFY6gl0DykoqJwJnP1bygXsAACXgsAAgh7oFIBM3eNs7SNRyoE",
-			   "CAACAgQAAxkBAAEZR2VjVVT32xzFQsiO3e0PTtgZ_1jclwACgwsAAgZWoVLixoKgf_yZHSoE"]
-
-	code = ["CAACAgQAAxkBAAEZR2djVVUQtuTzDRmKxflI2PHQTLYlbgACBA0AAv1umFKywVn-M1px4ioE",
-			"CAACAgQAAxkBAAEZR2ljVVUr6cKm95sB-H9uxqGeY0bVMgACbwwAAoeeoFJb1vQpOb0zCioE"]
-
-	linux = ["CAACAgQAAxkBAAEZR21jVVVeLfNWE-ymvjtlmeNJhnO_ywACSgwAAsLJoVLjssjLsuYj2SoE"]
-
-	random = ["CAACAgQAAxkBAAEZR9hjVWjM0dHlc-YobW-7ivwgU_Ic6QACIwsAAoHVsVJw7D5sBWCZfCoE",
-	          "CAACAgQAAxkBAAEZR9pjVWjw1BZkzHeekZSQc5sFG7yPSgACbg0AAu9QqVLhLqTCW-Y70SoE",
-			  "CAACAgQAAxkBAAEZR9xjVWkLXFB5Tsbc0nm0IdRhptCUZQACKgwAAiioqVINGGZkFK85wCoE"]
-	
-	stickers = {"bash" : bash , 
-				"linux" : linux , 
-				"code" : code , 
-				"cms" : cms , 
-				"docker" : docker,
-				"devops" : devops,
-				"sql" : sql,
-				"general" : general,
-				"random" : random}
 
 	@classmethod
-	async def new_Bot(cls , id , groupe_id , time_zone , app , quiz_urls , telegram_bot_url , TELEGRAM_API_TOKEN , parameters):
+	async def new_Bot(cls , id , groupe_id , time_zone , app:Client , quiz_urls , telegram_bot_url , TELEGRAM_API_TOKEN , parameters):
 		self = QuizBot()
 		self.__id = id
 		self.groupe_id = groupe_id
@@ -120,8 +87,6 @@ class QuizBot:
 				await self.schedule_quiz()
 
 
-	
-	
 	#*************************************setter**********************************
 	def set_automatic(self , automatic):
 		self.__automatic = automatic
@@ -170,7 +135,6 @@ class QuizBot:
 			return "medium"
 		else:
 			return "hard"
-
 
 	def quiz_request(self):
 		result = None
@@ -325,13 +289,29 @@ class QuizBot:
 			return self.__parse_trivia_questions(json_question)
 
 
-	async def send_quiz(self):
+	#on recupere les resultats des votes pour les questions 
+	#et pour la difficulte
+	def __get_vote_result(self , conn:MySQLConnection):
+		if self.__democracy:
+			questions_vote = Vote.get_vote(conn , VoteName.CHOICE_QUESTIONS_TYPE)
+			if questions_vote != None:
+				difficulty_vote = Vote.get_vote(conn , VoteName.CHOICE_DIFFICUTY_TYPE) 
+				if difficulty_vote != None:
+					return questions_vote.get_result(QuizBot.app , self.groupe_id) , difficulty_vote.get_result(QuizBot.app , self.groupe_id)
+
+		return None , None
+
+
+	async def send_quiz(self , conn : MySQLConnection):
 		if self.__automatic == 1:
-			category_tab = ["linux" , "bash" , "devops" , "code" , "cms" , "sql" , "docker" , "general" , "random"]
-			difficulty_tab = ["easy" , "medium" , "hard"]
-			self.__category = random.choice(category_tab)
-			self.__difficulty = random.choice(difficulty_tab)
-	
+			self.__category = random.choice(CATEGORY_TAB)
+			self.__difficulty = random.choice(DIFFICULTY_TAB)
+
+			cat , dif = self.__get_vote_result(conn)
+			if cat == None and dif == None:
+				self.__category = cat
+				self.__difficulty = dif
+
 		# print(self.__category)
 		questions = self.quiz_request()
 		if self.__category == Category.RANDOM:
@@ -339,7 +319,7 @@ class QuizBot:
 		else:
 			self.__message = self.__message.format(category = self.__category , difficulty = self.__difficulty)
 
-		sticker_to_loads = QuizBot.stickers[self.__category]
+		sticker_to_loads = STICKERS[self.__category]
 		nbr_stickers = len(sticker_to_loads)
 		
 		sticker_index = 0
@@ -404,25 +384,23 @@ class QuizBot:
 					await QuizBot.app.send_poll(self.groupe_id , question["question"] , propositions , type = enums.PollType.QUIZ , correct_option_id = index_correct)
 
 			# print("quiz sending ............")
+		
+		q_c = "In which domain you want the next serie of quizz be?"
+		q_d = "Select the difficulty"
+		
+		vote_id_question = Vote.send(QuizBot.app , QuizBot.groupe_id , q_c , CATEGORY_TAB , None)
+		description = "il s'agit d'un vote pour les question"
+		vote_q = Vote(vote_id_question , VoteName.CHOICE_QUESTIONS_TYPE , description , get_time())
+		vote_q.save()
 
-	def __time_in_second(time : datetime) -> int:
-		return time.hour *3600 + time.minute*60 + time.second
+		vote_id_difficulty = Vote.send(QuizBot.app , QuizBot.groupe_id , q_d , DIFFICULTY_TAB , None)
+		description = "il s'agit d'un vote pour le choix des difficultes"
+		vote_d = Vote(vote_id_difficulty , VoteName.CHOICE_DIFFICUTY_TYPE , description , get_time())
+		vote_d.save()
 
+		conn.commit()
+		conn.close()
 
-	def __get_time(self)-> datetime:
-		config.encoding = locale.getpreferredencoding(False)
-		api_key = config("API_TIME_ZONE_KEY")
-		tab = self.__time_zone.splite("/")
-		time_zone = tab[0]
-		city = tab[1]
-		response = requests.get(self.__api_time_url.format(api_key=api_key , time_zone = time_zone , city = city))
-		result_json = response.json()
-		date_time = result_json["date_time"].split(" ")
-		date = date_time[0]
-		time = date_time[1]
-		date_tab = date.split("-")
-		time_tab = time.split(":")
-		return datetime(int(date_tab[0]) , int(date_tab[1]) , int(date_tab[2]) , int(time_tab[0]) , int(time_tab[1]) , int(time_tab[2]))
 
 
 	async def schedule_quiz(self):
@@ -433,10 +411,10 @@ class QuizBot:
 			else:
 				hour = datetime.strptime(str(self.__hour), "%H:%M:%S")
 				print(hour)
-				now  = self.__get_time()
+				now  = get_time(self.__time_zone)
 				to_add : int = 0
-				s_hour = QuizBot.__time_in_second(hour)
-				s_now = QuizBot.__time_in_second(now)
+				s_hour = time_in_second(hour)
+				s_now = time_in_second(now)
 				if s_hour < s_now:
 					to_add = s_now - s_hour
 					nbr_second = self.__period * 3600 - to_add
@@ -447,8 +425,9 @@ class QuizBot:
 				print(f"now {now}")
 				print(f"to_add {to_add}")
 				print(f"nbr_second {nbr_second}")
-				
-			self.__job = QuizBot.scheduler.add_job(QuizBot.send_quiz , "interval" ,args = [self], seconds=nbr_second)
+			
+			
+			self.__job = QuizBot.scheduler.add_job(QuizBot.send_quiz , "interval" ,args = [self , connect()], seconds=nbr_second)
 			
 		def __str__(self):
 			return self.groupe_id

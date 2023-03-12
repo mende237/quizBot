@@ -1,11 +1,9 @@
 from http import client
 from unittest import async_case
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-import mysql.connector
-from decouple import config
 from utils.utils import Category , Difficulty
 from QuizBot import QuizBot
-from datetime import datetime
+from utils.utils import connect
 
 
 
@@ -24,28 +22,17 @@ class BotManager:
 	bot_list = []
 	#est un dictionnaire dont la cle est le nom d'utilisateur et la valeur nom d'utilisateur du canal associé
 	connexions = {}
-	
-	def connect():
-		# config.encoding = locale.getpreferredencoding(False)
-		conn = mysql.connector.connect(
-			host = config('HOST'),
-			user = config('DB_USER'),
-			passwd = config('DB_PASS'),
-			database = config('DATA_BASE'),
-			port = config('PORT', cast = int),
-		)
-		return conn
-	
+		
 	def get_scheduler() -> AsyncIOScheduler:
 		return AsyncIOScheduler()
 	
 	#cette fonction verifie si l'identifiant du groupe passe existe dans la BD
 	def verification_BD(groupe_id):
-		conn = BotManager.connect()
+		conn = connect()
 		print(conn)
 		my_cursor = conn.cursor()
 				
-		my_cursor.execute("SELECT username FROM Groupe WHERE username = %s" , (groupe_id,))
+		my_cursor.execute("SELECT USERNAME FROM GROUPE WHERE USERNAME = %s" , (groupe_id,))
 		results = my_cursor.fetchall()
 		# print(type(results))
 		for x in results:
@@ -59,7 +46,7 @@ class BotManager:
 	#cette fonction insere le goupe et le bot associe dans la base de donne
 	#si tout ce passe bien elle retoure l'identifiant du bot au cas contraire elle retourne None
 	def insert_group(user_name , parameters , description = None):
-		conn = BotManager.connect()
+		conn = connect()
 		my_cursor = conn.cursor()
 		
 		#on verifie que le groupe n'existe pas encore dans la bd 
@@ -67,7 +54,7 @@ class BotManager:
 		if rep == 1:
 			return None
 		
-		sql = "INSERT INTO Bot  ({params}) VALUES ("
+		sql = "INSERT INTO BOT  ({params}) VALUES ("
 		value = []
 		params = ""
 		
@@ -92,14 +79,14 @@ class BotManager:
 		my_cursor.execute(sql , tuple(value))
 		#conn.commit()
 		#on recupere l'identifiant du bot que l'on vient d'inserer dans la BD
-		my_cursor.execute("SELECT id FROM Bot ORDER BY id DESC LIMIT 1")
+		my_cursor.execute("SELECT ID FROM BOT ORDER BY ID DESC LIMIT 1")
 		id_Bot = (my_cursor.fetchall())[0][0]
 		if description == None:
-			my_cursor.execute("INSERT INTO Groupe (username , id_Bot) VALUES (%s , %s)" , (user_name , str(id_Bot)))
+			my_cursor.execute("INSERT INTO GROUPE (USERNAME , ID) VALUES (%s , %s)" , (user_name , str(id_Bot)))
 		else:
-			my_cursor.execute("INSERT INTO Groupe (username , description , id_Bot) VALUES (%s , %s , %s)" , (user_name , description, str(id_Bot)))
+			my_cursor.execute("INSERT INTO GROUPE (USERNAME , DESCRIPTION , ID) VALUES (%s , %s , %s)" , (user_name , description, str(id_Bot)))
 		
-		my_cursor.execute("UPDATE Bot SET username_Groupe = %s WHERE id = %s" , (user_name , id_Bot))
+		my_cursor.execute("UPDATE BOT SET USERNAME = %s WHERE ID = %s" , (user_name , id_Bot))
 
 		conn.commit()
 		conn.close()
@@ -108,16 +95,16 @@ class BotManager:
 	
 		
 	def update_parameter(user_name , parameters):        
-		conn = BotManager.connect()
+		conn = connect()
 		my_cursor = conn.cursor()
-		my_cursor.execute("SELECT id FROM Bot WHERE username_Groupe = %s" , (user_name,))
+		my_cursor.execute("SELECT ID FROM BOT WHERE USERNAME = %s" , (user_name,))
 		
 		temp = my_cursor.fetchall()
 		if len(temp) == 0:
 			conn.close()
 			return -1
 		
-		sql = "UPDATE Bot SET {params} WHERE username_Groupe = %s"
+		sql = "UPDATE BOT SET {params} WHERE USERNAME = %s"
 		params = ""
 		value = []
 		
@@ -178,12 +165,12 @@ class BotManager:
 				return None
 		
 		
-	async def load_all(app):
-		conn = BotManager.connect()
+	async def load_all(app : client):
+		conn = connect()
 		# print(conn)
 		my_cursor = conn.cursor()
 				
-		my_cursor.execute("SELECT * FROM Bot")
+		my_cursor.execute("SELECT * FROM BOT")
 		results = my_cursor.fetchall()
 		print(results)
 		#on selectionne tous les entêtes sauf username_Groupe
@@ -191,10 +178,10 @@ class BotManager:
 		data = [dict(zip(column_names , row)) for row in results]
 		
 		for line in data:
-			my_cursor.execute("SELECT username FROM Groupe where id_Bot = %s" , (line["id"],))
+			my_cursor.execute("SELECT USERNAME FROM GROUPE WHERE GROUPE.ID = %s" , (line["ID"],))
 			username = my_cursor.fetchall()[0][0]
 			# print(f"$$$$$$$$$$$$$$$$$$$$ load all {BotManager.quiz_urls} $$$$$$$$$$$$$$$$$$$$$$")
-			quizBot = await QuizBot.new_Bot(line["id"] , line["username_Groupe"] , line['time_zone'], app , BotManager.quiz_urls , BotManager.telegram_bot_url
+			quizBot = await QuizBot.new_Bot(line["ID"] , username , line['TIMEZONE'], app , BotManager.quiz_urls , BotManager.telegram_bot_url
 										, BotManager.TELEGRAM_API_TOKEN , line)
 			# print(line)
 			BotManager.bot_list.append(quizBot)
@@ -231,7 +218,7 @@ class BotManager:
 				if attribut.lower() == "category".lower():
 					category = BotManager.text_to_Enum(value , True)
 					if category != None:
-						parameter["category"] = value
+						parameter["CATEGORY"] = value
 					else:
 						print("errrrorrrr unknow category")
 						return None
@@ -240,7 +227,7 @@ class BotManager:
 					#******************************** a modifie ************************
 					#*******************************************************************
 					nbr_limite = value
-					parameter["nbr_limite"] = nbr_limite
+					parameter["NBR_LIMITE"] = nbr_limite
 					# if category != None:
 					# else:
 					#     print("errrrorrrr unknow category")
@@ -251,19 +238,23 @@ class BotManager:
 					elif value.lower() == "true".lower():
 						value = 1
 						automatic = 1
-						now = datetime.now()
-						current_time = now.strftime("%H:%M:%S")
-						parameter["hour"] = current_time
+						# #####
+						# #a modifier 
+						# now = datetime.now()
+						# current_time = now.strftime("%H:%M:%S")
+						# parameter["HOUR"] = current_time
+						# ######
+						# #####
 					else:
 						print("errrrrrrrror unknow boolean")
 						return None
 					
-					parameter["automatic"] = automatic
+					parameter["AUTOMATIC"] = automatic
 				
 				if attribut.lower() == "difficulty".lower():
 					difficulty = BotManager.text_to_Enum(value , False)
 					if difficulty != None:
-						parameter["difficulty"] = value
+						parameter["DIFFICULTY"] = value
 					else:
 						print("errrrorrrr unknow difficulty")
 						return None
@@ -271,7 +262,7 @@ class BotManager:
 				if attribut.lower() == "hour".lower():
 					hour = BotManager.verify_hour(value)
 					if hour != None:
-						parameter["hour"] = hour
+						parameter["HOUR"] = hour
 					else:
 						print("errrrorrrr can able to format hour")
 						return None
@@ -279,15 +270,31 @@ class BotManager:
 				if attribut.lower() == "period".lower():
 					period = BotManager.verify_hour(value , False)
 					if period != None:
-						parameter["period"] = period
+						parameter["PERIOD"] = period
 					else:
 						print("errrrorrrr can able to format period")
 						return None
 
 				if attribut.lower() == "time_zone".lower():
 					time_zone = value
-					parameter["time_zone"] = time_zone
+					parameter["TIMEZONE"] = time_zone
 
+				if attribut.lower() == "evaluation_period".lower():
+					evaluation_period = BotManager.verify_hour(value , False)
+					if evaluation_period != None:
+						parameter["EVALUATION_PERIOD"] = evaluation_period
+					else:
+						print("errrrorrrr can able to format period")
+						return None
+
+				if attribut.lower() == "response_time".lower():
+					response_time = BotManager.verify_hour(value , False)
+					if response_time != None:
+						parameter["RESPONSE_TIME"] = response_time
+					else:
+						print("errrrorrrr can able to format period")
+						return None
+				
 			return parameter
 		else:
 			print("command errrrrorrrr")
