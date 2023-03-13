@@ -35,7 +35,7 @@ CATEGORY_TAB = ["linux" , "bash" , "devops" , "code" , "cms" , "sql" , "docker" 
 DIFFICULTY_TAB = ["easy" , "medium" , "hard"]
 
 
-def connect() -> MySQLConnection:
+def connect_db() -> MySQLConnection:
 	# config.encoding = locale.getpreferredencoding(False)
 	conn = mysql.connector.connect(
 		host = config('HOST'),

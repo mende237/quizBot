@@ -8,7 +8,7 @@ def get_time(time_zone:str)-> datetime:
     config.encoding = locale.getpreferredencoding(False)
     api_time_url = "https://api.ipgeolocation.io/timezone?apiKey={api_key}&tz={time_zone}/{city}"
     api_key = config("API_TIME_ZONE_KEY")
-    tab = time_zone.splite("/")
+    tab = time_zone.split("/")
     country = tab[0]
     city = tab[1]
     response = requests.get(api_time_url.format(api_key=api_key , time_zone = country , city = city))

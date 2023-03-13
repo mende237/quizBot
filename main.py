@@ -18,6 +18,7 @@ from Bot_manager import BotManager
 from QuizBot import QuizBot
 from pyrogram import Client , filters , idle
 from pyrogram.raw.functions.messages.get_poll_results import GetPollResults
+from utils.utils import connect_db
 
 import locale
 from decouple import config
@@ -69,7 +70,7 @@ async def register(app : Client , message , is_private_message = False):
 	# print(informations)
 
 	if is_private_message == True:
-		if message.from_user.username not in BotManager.connexions.keys():
+		if username not in BotManager.connexions.keys():
 			await app.send_message(id, "connect you before")
 			return None
 		else:
@@ -87,7 +88,7 @@ async def register(app : Client , message , is_private_message = False):
 		bot_id = BotManager.insert_group(username , command)
 		#on verifie que l'insertion en BD c'est bien passé
 		if bot_id != None:
-			quizBot = await QuizBot.new_Bot(bot_id , app , username , command["TIMEZONE"],  BotManager.quiz_urls , BotManager.telegram_bot_url
+			quizBot = await QuizBot.new_Bot(bot_id , username ,app,  BotManager.quiz_urls , BotManager.telegram_bot_url
 											, BotManager.TELEGRAM_API_TOKEN , command)
 			BotManager.bot_list.append(quizBot)
 			await app.send_message(id, "register successful")
@@ -103,7 +104,7 @@ async def update(app : Client, message , is_private_message = False):
 	username = informations["username"]
 	id = message.chat.id
 	if is_private_message == True:
-		if message.from_user.username not in BotManager.connexions.keys():
+		if username not in BotManager.connexions.keys():
 			await app.send_message(id, "connect you before")
 			return None
 		else:
@@ -128,18 +129,18 @@ async def send(app : Client, message , is_private_message = False):
 	id = message.chat.id
 	informations = extract_usefull_information(message , is_private_message = is_private_message)
 	username = informations["username"]
-
 	if is_private_message == True:
-		if message.from_user.username not in BotManager.connexions.keys():
+		if username not in BotManager.connexions.keys():
 			await app.send_message(id, "connect you before")
 			return None
 		else:
 			username = BotManager.connexions[username]
 
+	print(f"username {username}")
 	quizBot = BotManager.find_bot(username)
-	conn = connect()
+	conn = connect_db()
 	if quizBot != None:
-		await quizBot.send_quiz(conn)       
+		await quizBot.send_quiz(conn , manual_call=True)       
 	else:
 		await app.send_message(id, "register your group before")
 
@@ -177,7 +178,7 @@ async def connect(app , message):
 	informations = extract_usefull_information(message , is_private_message = True)
 	username = informations["username"]
 	canal_username = BotManager.parse_connect_parameter(informations["command"])
-
+	print(f"canal user name {canal_username}")
 	if username in BotManager.connexions.keys():
 		await app.send_message(id, "you are already connect")
 	else:
@@ -186,6 +187,8 @@ async def connect(app , message):
 		else:
 			BotManager.connexions[username] = canal_username
 			await app.send_message(id, "success connexion")
+
+
 
 @app.on_message(filters.command("disconnect") & filters.private)
 async def connect(app , message):

@@ -26,12 +26,22 @@ random = ["CAACAgQAAxkBAAEZR9hjVWjM0dHlc-YobW-7ivwgU_Ic6QACIwsAAoHVsVJw7D5sBWCZf
             "CAACAgQAAxkBAAEZR9pjVWjw1BZkzHeekZSQc5sFG7yPSgACbg0AAu9QqVLhLqTCW-Y70SoE",
             "CAACAgQAAxkBAAEZR9xjVWkLXFB5Tsbc0nm0IdRhptCUZQACKgwAAiioqVINGGZkFK85wCoE"]
 
+
+difficulty = ["CAACAgQAAxkBAAEMlQpkDvW1pGcTYn7L1iQVtc3dIITIJQAC2BAAAkateVB3ra2tFbf5ES8E",
+            "CAACAgQAAxkBAAEMlQxkDvXCEvXoFLafMnRknyIYGGTSxwAC5Q8AAuYjeVA_C4wTbV7_zy8E"]
+
+category = ["CAACAgQAAxkBAAEMlQ5kDvabF0P96KGMaNmN1p4DTBD5fAACgREAAqc7eFCvTvwjE39aUi8E",
+            "CAACAgQAAxkBAAEMlRBkDvebY9MXbts3P5I1MebIdyQImAACXAwAAqiKeFCrbfB8JSzhQi8E"]
+
+
 STICKERS = {"bash" : bash , 
-				"linux" : linux , 
-				"code" : code , 
-				"cms" : cms , 
-				"docker" : docker,
-				"devops" : devops,
-				"sql" : sql,
-				"general" : general,
-				"random" : random}
+            "linux" : linux , 
+            "code" : code , 
+            "cms" : cms , 
+            "docker" : docker,
+            "devops" : devops,
+            "sql" : sql,
+            "general" : general,
+            "random" : random,
+            "difficulty":difficulty,
+            "category":category}

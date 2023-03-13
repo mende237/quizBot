@@ -29,7 +29,6 @@ class Vote:
             )
 
         conn.commit()
-        conn.close()
         return True
 
     @staticmethod
@@ -73,11 +72,11 @@ class Vote:
 
     @staticmethod
     async def send(app:Client , username_channel:str , question:str , 
-                        options:list , close_date:datetime) -> int:
+                        options:list , close_date:datetime = None, open_period = None) -> int:
         
         poll = None
         if app.is_connected == True:
-            poll = await app.send_poll(username_channel, question , options , close_date=close_date)
+            poll = await app.send_poll(username_channel, question , options ,close_date=close_date)
         else:
             async with app:
                 poll = await app.send_poll(username_channel, question , options , close_date=close_date)
@@ -92,14 +91,14 @@ class Vote:
     
         return None
     
-    @staticmethod
-    async def get_result(app:Client , username_channel:str , vote_id:int) -> str:
-        result =  await app.get_messages(username_channel , vote_id)
-        # print(type(result.poll.options[0]))
-        if not result.empty:
-            return Vote.__get_winner(result.poll.options)
+    # @staticmethod
+    # async def get_result(app:Client , username_channel:str , vote_id:int) -> str:
+    #     result =  await app.get_messages(username_channel , vote_id)
+    #     # print(type(result.poll.options[0]))
+    #     if not result.empty:
+    #         return Vote.__get_winner(result.poll.options)
     
-        return None
+    #     return None
 
 
     @staticmethod

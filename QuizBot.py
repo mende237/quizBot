@@ -2,7 +2,7 @@ import os
 import random
 import requests
 import json
-from utils.utils import Category , Difficulty , Api ,VoteName , CATEGORY_TAB , DIFFICULTY_TAB , connect 
+from utils.utils import Category , Difficulty , Api ,VoteName , CATEGORY_TAB , DIFFICULTY_TAB , connect_db 
 from utils.TimeManagement import get_time , time_in_second
 from utils.StickersManagement import STICKERS
 from Vote import Vote
@@ -10,6 +10,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from  mysql.connector import MySQLConnection
 from apscheduler.job import Job
 from datetime import datetime
+from datetime import timedelta
 from urllib.parse import unquote
 from pyrogram import Client , enums
 from pyrogram import Client
@@ -22,10 +23,10 @@ class QuizBot:
 	__category : str = "general"
 	__difficulty : str= "easy"
 	__nbr_limite : int = 5
-	__hour : datetime = datetime.now()
-	__period = None
+	__hour : datetime = None
+	__period : int = 24
 	__job : Job = None
-	__time_zone : str = None
+	__time_zone : str = 'Africa/Douala'
 	__democracy : bool = True
 	__evaluation_period : int = 7
 	__response_time : int = 60
@@ -38,11 +39,13 @@ class QuizBot:
 	index = 0
 
 	@classmethod
-	async def new_Bot(cls , id , groupe_id , time_zone , app:Client , quiz_urls , telegram_bot_url , TELEGRAM_API_TOKEN , parameters):
+	async def new_Bot(cls , id , groupe_id , app:Client , quiz_urls , telegram_bot_url , TELEGRAM_API_TOKEN , parameters , time_zone = None):
 		self = QuizBot()
 		self.__id = id
 		self.groupe_id = groupe_id
-		self.__time_zone = time_zone
+		if time_zone != None:
+			self.__time_zone = time_zone
+			
 		QuizBot.app = app
 		self.__quiz_urls = quiz_urls
 		self.__telegram_bot_url = telegram_bot_url
@@ -56,33 +59,36 @@ class QuizBot:
 		keys = parameters.keys()
 		modif = False
 
-		if "automatic" in keys and parameters["automatic"] != None:
-			self.__automatic = parameters["automatic"]
+		if "AUTOMATIC" in keys and parameters["AUTOMATIC"] != None:
+			self.__automatic = parameters["AUTOMATIC"]
+			self.__hour = get_time(self.__time_zone)
 			modif = True
    
-		if "category" in keys and parameters["category"] != None:
-			self.__category = parameters["category"]
+		if "CATEGORY" in keys and parameters["CATEGORY"] != None:
+			self.__category = parameters["CATEGORY"]
 
-		if "difficulty" in keys and parameters["difficulty"] != None:
-			self.__difficulty = parameters["difficulty"]
+		if "DIFFICULTY" in keys and parameters["DIFFICULTY"] != None:
+			self.__difficulty = parameters["DIFFICULTY"]
    
-		if "nbr_limite" in keys and parameters["nbr_limite"] != None:
-			self.__nbr_limite = parameters["nbr_limite"]
+		if "NBR_LIMITE" in keys and parameters["NBR_LIMITE"] != None:
+			self.__nbr_limite = parameters["NBR_LIMITE"]
    
-		if "hour" in keys and parameters["hour"] != None:
-			if self.__hour != parameters["hour"]:
-				print("$$$$$$$$$$$$$$$$$$$$$****************************$$$$$$$$$$$$$$$$$$$$$$$$")
-				modif = True
-			self.__hour = parameters["hour"]
+		if "HOUR" in keys and parameters["HOUR"] != None:
+			modif = True
+			try:
+				self.__hour = datetime.strptime(parameters["HOUR"] , "%Y-%m-%d %H:%M:%S")
+			except ValueError:
+				self.__hour = datetime.strptime(parameters["HOUR"] , "%H:%M:%S")
+			except TypeError:
+				self.__hour = parameters["HOUR"]
 		
-		if "period" in keys and parameters["period"] != None:
-			if self.__period != parameters["period"]:
-				modif = True
-			self.__period = parameters["period"]
+		if "PERIOD" in keys and parameters["PERIOD"] != None:
+			modif = True
+			self.__period = int(parameters["PERIOD"])
 			
 		print(f"automatic {self.__automatic } time zone {self.__time_zone} category {self.__category} difficulty {self.__difficulty} nbr_limte {self.__nbr_limite } hour {self.__hour } preiod {self.__period}")
 		if is_init == False:
-			if modif == True:
+			if modif == True and self.__automatic == 1:
 				self.__job.remove()
 				await self.schedule_quiz()
 
@@ -156,7 +162,7 @@ class QuizBot:
 				result = os.popen(f"""curl {self.__quiz_urls["specific"][0]} -G -d apiKey={self.__quiz_urls["specific"][1]}\
 																	            -d limit={self.__nbr_limite}""").read()  
 			response = json.loads(result)
-			print(response)
+			# print(response)
 			
 		elif self.__category_switching() == Category.GENERAL:
 			from_which_api = Api.TRIVIA_API
@@ -208,7 +214,11 @@ class QuizBot:
 		questions = []
 		for item in json_question:
 			#print("********************item**************************")
-			question_content = item['question']
+			try:
+				question_content = item['question']
+			except TypeError:
+				print(json_question)
+
 			propositions = {"question" : question_content}
 			#print("question_content " + question_content)
 			proposed_answers = item['answers']
@@ -291,35 +301,64 @@ class QuizBot:
 
 	#on recupere les resultats des votes pour les questions 
 	#et pour la difficulte
-	def __get_vote_result(self , conn:MySQLConnection):
+	async def __get_vote_result(self , conn:MySQLConnection):
 		if self.__democracy:
 			questions_vote = Vote.get_vote(conn , VoteName.CHOICE_QUESTIONS_TYPE)
 			if questions_vote != None:
 				difficulty_vote = Vote.get_vote(conn , VoteName.CHOICE_DIFFICUTY_TYPE) 
 				if difficulty_vote != None:
-					return questions_vote.get_result(QuizBot.app , self.groupe_id) , difficulty_vote.get_result(QuizBot.app , self.groupe_id)
+					question_winner = await questions_vote.get_result(QuizBot.app , self.groupe_id)
+					difficulty_winner = await difficulty_vote.get_result(QuizBot.app , self.groupe_id)
+					print(f"{question_winner} {difficulty_winner}")
+					return  question_winner , difficulty_winner
 
 		return None , None
 
-
-	async def send_quiz(self , conn : MySQLConnection):
-		if self.__automatic == 1:
-			self.__category = random.choice(CATEGORY_TAB)
-			self.__difficulty = random.choice(DIFFICULTY_TAB)
-
-			cat , dif = self.__get_vote_result(conn)
-			if cat == None and dif == None:
-				self.__category = cat
-				self.__difficulty = dif
-
-		# print(self.__category)
-		questions = self.quiz_request()
-		if self.__category == Category.RANDOM:
-			self.__message = "this series of quizz is a random serie"
+	#cette fonction retourne la frequence de repetition d'une action 
+	#en seconde
+	def __get_period(self , period:int , now : datetime , hour:datetime = None):
+		nbr_second : int = 0
+		if period < 24:
+			nbr_second = int(period) * 3600
 		else:
-			self.__message = self.__message.format(category = self.__category , difficulty = self.__difficulty)
+			to_add  = (hour - now).seconds if hour > now else -(now - hour).seconds
+			nbr_second = period * 3600 + to_add
 
-		sticker_to_loads = STICKERS[self.__category]
+		return nbr_second
+	
+
+	
+	async def __send_vote(self , conn:MySQLConnection):
+		if self.__democracy and self.__period != None:
+			q_c = "In which domain you want the next serie of quizz be?"
+			q_d = "Select the difficulty"
+			now = get_time(self.__time_zone)
+			hour = self.__hour
+			nbr_second = self.__get_period(self.__period , now = now , hour = hour)
+			time_change = timedelta(seconds=nbr_second)
+
+			print(nbr_second)
+			print(f"now {now}")
+			print(f"end {now + time_change}")
+
+			sticker_to_load = self.__get_sticker("category")
+			await self.__send_sticker(sticker_to_load)
+			vote_id_question = await Vote.send(QuizBot.app , self.groupe_id , q_c , CATEGORY_TAB)
+			description = "il s'agit d'un vote pour les question"
+			vote_q = Vote(vote_id_question , VoteName.CHOICE_QUESTIONS_TYPE , description , get_time(self.__time_zone) , self.__id)
+			vote_q.save(conn)
+
+			sticker_to_load = self.__get_sticker("difficulty")
+			await self.__send_sticker(sticker_to_load)
+			vote_id_difficulty = await Vote.send(QuizBot.app , self.groupe_id , q_d , DIFFICULTY_TAB)
+			description = "il s'agit d'un vote pour le choix des difficultes"
+			vote_d = Vote(vote_id_difficulty , VoteName.CHOICE_DIFFICUTY_TYPE , description , get_time(self.__time_zone) , self.__id)
+			vote_d.save(conn)
+			conn.commit()
+
+
+	def __get_sticker(self , sticker_name:str):
+		sticker_to_loads = STICKERS[sticker_name]
 		nbr_stickers = len(sticker_to_loads)
 		
 		sticker_index = 0
@@ -327,14 +366,54 @@ class QuizBot:
 		if nbr_stickers > 1:
 			sticker_index = random.randint(0 , nbr_stickers - 1)
 
-		sticker_to_load = sticker_to_loads[sticker_index]
+		return sticker_to_loads[sticker_index]
+	
 
+
+	async def __send_sticker(self , sticker_id:str):
 		if QuizBot.app.is_connected == True:
-			await QuizBot.app.send_sticker(self.groupe_id , sticker_to_load)
+			await QuizBot.app.send_sticker(self.groupe_id , sticker_id)
 		else:
 			async with QuizBot.app:
-				await QuizBot.app.send_sticker(self.groupe_id , sticker_to_load)
+				await QuizBot.app.send_sticker(self.groupe_id , sticker_id)
 		
+
+	async def send_quiz(self , conn : MySQLConnection , manual_call = False):
+		if self.__automatic == 1:
+			self.__category = random.choice(CATEGORY_TAB)
+			self.__difficulty = random.choice(DIFFICULTY_TAB)
+
+			cat , dif = await self.__get_vote_result(conn)
+			if cat != None and dif != None:
+				self.__category = cat
+				self.__difficulty = dif
+				print(f"cat {cat} diff {dif}")
+
+		print(f"*******category -> {self.__category}")
+		# print(self.__category)
+		questions = self.quiz_request()
+		if self.__category == Category.RANDOM:
+			self.__message = "this series of quizz is a random serie"
+		else:
+			self.__message = self.__message.format(category = self.__category , difficulty = self.__difficulty)
+
+		# sticker_to_loads = STICKERS[self.__category]
+		# nbr_stickers = len(sticker_to_loads)
+		
+		# sticker_index = 0
+		# #on hoisi une image aleatoire que l'on va envoyé
+		# if nbr_stickers > 1:
+		# 	sticker_index = random.randint(0 , nbr_stickers - 1)
+
+		sticker_to_load = self.__get_sticker(self.__category)
+
+		# if QuizBot.app.is_connected == True:
+		# 	await QuizBot.app.send_sticker(self.groupe_id , sticker_to_load)
+		# else:
+		# 	async with QuizBot.app:
+		# 		await QuizBot.app.send_sticker(self.groupe_id , sticker_to_load)
+		
+		await self.__send_sticker(sticker_to_load)
 		# print("pass sticker")
 		# for question in questions:
 		# 	print(question)
@@ -384,21 +463,7 @@ class QuizBot:
 					await QuizBot.app.send_poll(self.groupe_id , question["question"] , propositions , type = enums.PollType.QUIZ , correct_option_id = index_correct)
 
 			# print("quiz sending ............")
-		
-		q_c = "In which domain you want the next serie of quizz be?"
-		q_d = "Select the difficulty"
-		
-		vote_id_question = Vote.send(QuizBot.app , QuizBot.groupe_id , q_c , CATEGORY_TAB , None)
-		description = "il s'agit d'un vote pour les question"
-		vote_q = Vote(vote_id_question , VoteName.CHOICE_QUESTIONS_TYPE , description , get_time())
-		vote_q.save()
-
-		vote_id_difficulty = Vote.send(QuizBot.app , QuizBot.groupe_id , q_d , DIFFICULTY_TAB , None)
-		description = "il s'agit d'un vote pour le choix des difficultes"
-		vote_d = Vote(vote_id_difficulty , VoteName.CHOICE_DIFFICUTY_TYPE , description , get_time())
-		vote_d.save()
-
-		conn.commit()
+		await self.__send_vote(conn)
 		conn.close()
 
 
@@ -406,28 +471,31 @@ class QuizBot:
 	async def schedule_quiz(self):
 		nbr_second = 0
 		if self.__automatic == 1 and self.__period != None:
-			if self.__period < 24 == 0:
-				nbr_second = int(self.__period) * 3600
-			else:
-				hour = datetime.strptime(str(self.__hour), "%H:%M:%S")
-				print(hour)
-				now  = get_time(self.__time_zone)
-				to_add : int = 0
-				s_hour = time_in_second(hour)
-				s_now = time_in_second(now)
-				if s_hour < s_now:
-					to_add = s_now - s_hour
-					nbr_second = self.__period * 3600 - to_add
-				else:
-					to_add = s_hour - s_now
-					nbr_second = self.__period * 3600 + to_add
+			# if self.__period < 24 == 0:
+			# 	nbr_second = int(self.__period) * 3600
+			# else:
+			hour = datetime.strptime(str(self.__hour), "%Y-%m-%d %H:%M:%S")
+			now  = get_time(self.__time_zone)
+			# 	print(hour)
+			# 	now  = get_time(self.__time_zone)
+			# 	to_add  = (hour - now).seconds if hour > now else -(now - hour).seconds
 
-				print(f"now {now}")
-				print(f"to_add {to_add}")
-				print(f"nbr_second {nbr_second}")
+			# 	nbr_second = self.__period * 3600 + to_add
+				# s_hour = time_in_second(hour)
+				# s_now = time_in_second(now)
+				# if s_hour < s_now:
+				# 	nbr_second = self.__period * 3600 - to_add
+				# 	to_add = s_now - s_hour
+				# else:
+				# 	to_add = s_hour - s_now
+				# 	nbr_second = self.__period * 3600 + to_add
+
+				# print(f"now {now}")
+				# print(f"to_add {to_add}")
+				# print(f"nbr_second {nbr_second}")
 			
-			
-			self.__job = QuizBot.scheduler.add_job(QuizBot.send_quiz , "interval" ,args = [self , connect()], seconds=nbr_second)
+			nbr_second = self.__get_period(self.__period , now = now, hour = hour)
+			self.__job = QuizBot.scheduler.add_job(QuizBot.send_quiz , "interval" ,args = [self , connect_db()], seconds=nbr_second)
 			
 		def __str__(self):
 			return self.groupe_id

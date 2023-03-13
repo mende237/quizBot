@@ -3,7 +3,7 @@ from unittest import async_case
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from utils.utils import Category , Difficulty
 from QuizBot import QuizBot
-from utils.utils import connect
+from utils.utils import connect_db
 
 
 
@@ -28,7 +28,7 @@ class BotManager:
 	
 	#cette fonction verifie si l'identifiant du groupe passe existe dans la BD
 	def verification_BD(groupe_id):
-		conn = connect()
+		conn = connect_db()
 		print(conn)
 		my_cursor = conn.cursor()
 				
@@ -46,7 +46,7 @@ class BotManager:
 	#cette fonction insere le goupe et le bot associe dans la base de donne
 	#si tout ce passe bien elle retoure l'identifiant du bot au cas contraire elle retourne None
 	def insert_group(user_name , parameters , description = None):
-		conn = connect()
+		conn = connect_db()
 		my_cursor = conn.cursor()
 		
 		#on verifie que le groupe n'existe pas encore dans la bd 
@@ -95,7 +95,7 @@ class BotManager:
 	
 		
 	def update_parameter(user_name , parameters):        
-		conn = connect()
+		conn = connect_db()
 		my_cursor = conn.cursor()
 		my_cursor.execute("SELECT ID FROM BOT WHERE USERNAME = %s" , (user_name,))
 		
@@ -166,7 +166,7 @@ class BotManager:
 		
 		
 	async def load_all(app : client):
-		conn = connect()
+		conn = connect_db()
 		# print(conn)
 		my_cursor = conn.cursor()
 				
@@ -181,8 +181,8 @@ class BotManager:
 			my_cursor.execute("SELECT USERNAME FROM GROUPE WHERE GROUPE.ID = %s" , (line["ID"],))
 			username = my_cursor.fetchall()[0][0]
 			# print(f"$$$$$$$$$$$$$$$$$$$$ load all {BotManager.quiz_urls} $$$$$$$$$$$$$$$$$$$$$$")
-			quizBot = await QuizBot.new_Bot(line["ID"] , username , line['TIMEZONE'], app , BotManager.quiz_urls , BotManager.telegram_bot_url
-										, BotManager.TELEGRAM_API_TOKEN , line)
+			quizBot = await QuizBot.new_Bot(line["ID"] , username , app , BotManager.quiz_urls , BotManager.telegram_bot_url
+										, BotManager.TELEGRAM_API_TOKEN , line , time_zone=line['TIMEZONE'])
 			# print(line)
 			BotManager.bot_list.append(quizBot)
 			await quizBot.schedule_quiz()
@@ -319,6 +319,7 @@ class BotManager:
 		   
 	def find_bot(groupe_id) -> QuizBot:
 		for bot in BotManager.bot_list:
+			# print(f"parma {groupe_id} group_id {bot.groupe_id}")
 			if bot.groupe_id == groupe_id:
 				return bot
 

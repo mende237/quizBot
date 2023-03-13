@@ -349,33 +349,36 @@
 # date_tab = date.split("-")
 # time_tab = time.split(":")
 # time = datetime(int(date_tab[0]) , int(date_tab[1]) , int(date_tab[2]) , int(time_tab[0]) , int(time_tab[1]) , int(time_tab[2]))
-# print(time)
+# print(time.time())
 # toto = datetime.now()
 # print(toto.date())
 # print(toto.strftime("%Y:%m:%d"))
 
 
-from Vote import Vote
-from datetime import datetime
-import datetime as dt
-import mysql.connector
-from decouple import config
-from utils.utils import VoteName
+# from Vote import Vote
+# from datetime import datetime
+# import datetime as dt
+# import mysql.connector
+# from decouple import config
+# from utils.utils import VoteName
 
-vote = Vote(109 , VoteName.CHOICE_QUESTIONS_TYPE , "description" , datetime.now() , 3)
+# vote = Vote(109 , VoteName.CHOICE_QUESTIONS_TYPE , "description" , datetime.now() , 3)
 
-conn = mysql.connector.connect(
-			host = config('HOST'),
-			user = config('DB_USER'),
-			passwd = config('DB_PASS'),
-			database = config('DATA_BASE'),
-			port = config('PORT', cast = int),
-		)
+# conn = mysql.connector.connect(
+# 			host = config('HOST'),
+# 			user = config('DB_USER'),
+# 			passwd = config('DB_PASS'),
+# 			database = config('DATA_BASE'),
+# 			port = config('PORT', cast = int),
+# 		)
 
 
 import locale
 from pyrogram import Client , filters , idle
 from decouple import config
+from datetime import datetime
+from datetime import timedelta
+from Vote import Vote
 config.encoding = locale.getpreferredencoding(False)
 
 api_id = config('TELEGRAM_API_ID')
@@ -408,9 +411,9 @@ app = Client(
 async def send_quiz_from_channel(app , message):
     date_and_time = datetime.now()
     # Calling the timedelta() function 
-    time_change = dt.timedelta(minutes=10)
+    time_change = timedelta(minutes=10)
     new_time = date_and_time + time_change
-    poll_id = await Vote.send(app , "Ox00000d3" , "Is this a poll question?", ["Yes", "No", "Maybe"] , new_time)
+    poll_id = await Vote.send(app , "Ox00000d3" , "Is this a poll question?", ["Yes", "No", "Maybe"] , open_period = 900)
     print(poll_id)
 	
 @app.on_message(filters.command("results"))
@@ -422,3 +425,25 @@ async def send_quiz_from_channel(app , message):
 app.start()
 idle()
 app.stop()
+
+
+# from datetime import datetime
+# from datetime import timedelta
+# from utils.TimeManagement import get_time
+# # dates in string format
+# str_d1 = '17:0:00'
+# str_d2 = '17:30:20'
+# now = get_time("Africa/Douala")
+# # convert string to date object
+# d1 = datetime.strptime(str_d1, "%H:%M:%S")
+# d2 = datetime.strptime(str_d2, "%H:%M:%S")
+
+# time_change = timedelta(minutes=60*24)
+
+# print(now)
+
+# print(d1)
+# # hour = datetime.strptime(str(new_time), "%H:%M:%S")
+# # print(hour)
+# tata:int = 10
+# print(int(tata))
