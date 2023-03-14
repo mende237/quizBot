@@ -307,6 +307,8 @@ class QuizBot:
 			if questions_vote != None:
 				difficulty_vote = Vote.get_vote(conn , VoteName.CHOICE_DIFFICUTY_TYPE) 
 				if difficulty_vote != None:
+					await QuizBot.app.stop_poll(self.groupe_id, questions_vote.get_vote_id())
+					await QuizBot.app.stop_poll(self.groupe_id, difficulty_vote.get_vote_id())
 					question_winner = await questions_vote.get_result(QuizBot.app , self.groupe_id)
 					difficulty_winner = await difficulty_vote.get_result(QuizBot.app , self.groupe_id)
 					print(f"{question_winner} {difficulty_winner}")
@@ -328,33 +330,32 @@ class QuizBot:
 	
 
 	
-	async def __send_vote(self , conn:MySQLConnection):
-		if self.__democracy and self.__period != None:
-			q_c = "In which domain you want the next serie of quizz be?"
-			q_d = "Select the difficulty"
-			now = get_time(self.__time_zone)
-			hour = self.__hour
-			nbr_second = self.__get_period(self.__period , now = now , hour = hour)
-			time_change = timedelta(seconds=nbr_second)
+	async def __send_vote(self , conn:MySQLConnection):	
+		q_c = "In which domain you want the next serie of quizz be?"
+		q_d = "Select the difficulty"
+		now = get_time(self.__time_zone)
+		hour = self.__hour
+		nbr_second = self.__get_period(self.__period , now = now , hour = hour)
+		time_change = timedelta(seconds=nbr_second)
 
-			print(nbr_second)
-			print(f"now {now}")
-			print(f"end {now + time_change}")
+		print(nbr_second)
+		print(f"now {now}")
+		print(f"end {now + time_change}")
 
-			sticker_to_load = self.__get_sticker("category")
-			await self.__send_sticker(sticker_to_load)
-			vote_id_question = await Vote.send(QuizBot.app , self.groupe_id , q_c , CATEGORY_TAB)
-			description = "il s'agit d'un vote pour les question"
-			vote_q = Vote(vote_id_question , VoteName.CHOICE_QUESTIONS_TYPE , description , get_time(self.__time_zone) , self.__id)
-			vote_q.save(conn)
+		sticker_to_load = self.__get_sticker("category")
+		await self.__send_sticker(sticker_to_load)
+		vote_id_question = await Vote.send(QuizBot.app , self.groupe_id , q_c , CATEGORY_TAB)
+		description = "il s'agit d'un vote pour les question"
+		vote_q = Vote(vote_id_question , VoteName.CHOICE_QUESTIONS_TYPE , description , get_time(self.__time_zone) , self.__id)
+		vote_q.save(conn)
 
-			sticker_to_load = self.__get_sticker("difficulty")
-			await self.__send_sticker(sticker_to_load)
-			vote_id_difficulty = await Vote.send(QuizBot.app , self.groupe_id , q_d , DIFFICULTY_TAB)
-			description = "il s'agit d'un vote pour le choix des difficultes"
-			vote_d = Vote(vote_id_difficulty , VoteName.CHOICE_DIFFICUTY_TYPE , description , get_time(self.__time_zone) , self.__id)
-			vote_d.save(conn)
-			conn.commit()
+		sticker_to_load = self.__get_sticker("difficulty")
+		await self.__send_sticker(sticker_to_load)
+		vote_id_difficulty = await Vote.send(QuizBot.app , self.groupe_id , q_d , DIFFICULTY_TAB)
+		description = "il s'agit d'un vote pour le choix des difficultes"
+		vote_d = Vote(vote_id_difficulty , VoteName.CHOICE_DIFFICUTY_TYPE , description , get_time(self.__time_zone) , self.__id)
+		vote_d.save(conn)
+		conn.commit()
 
 
 	def __get_sticker(self , sticker_name:str):
@@ -378,16 +379,18 @@ class QuizBot:
 				await QuizBot.app.send_sticker(self.groupe_id , sticker_id)
 		
 
-	async def send_quiz(self , conn : MySQLConnection , manual_call = False):
+	async def send_quiz(self ,  manual_call = True):
+		conn = connect_db()
 		if self.__automatic == 1:
-			self.__category = random.choice(CATEGORY_TAB)
-			self.__difficulty = random.choice(DIFFICULTY_TAB)
-
-			cat , dif = await self.__get_vote_result(conn)
-			if cat != None and dif != None:
-				self.__category = cat
-				self.__difficulty = dif
-				print(f"cat {cat} diff {dif}")
+			if not self.__democracy or self.__period == None:
+				self.__category = random.choice(CATEGORY_TAB)
+				self.__difficulty = random.choice(DIFFICULTY_TAB)
+			else:
+				cat , dif = await self.__get_vote_result(conn)
+				if cat != None and dif != None:
+					self.__category = cat
+					self.__difficulty = dif
+					print(f"cat {cat} diff {dif}")
 
 		print(f"*******category -> {self.__category}")
 		# print(self.__category)
@@ -397,30 +400,10 @@ class QuizBot:
 		else:
 			self.__message = self.__message.format(category = self.__category , difficulty = self.__difficulty)
 
-		# sticker_to_loads = STICKERS[self.__category]
-		# nbr_stickers = len(sticker_to_loads)
-		
-		# sticker_index = 0
-		# #on hoisi une image aleatoire que l'on va envoyé
-		# if nbr_stickers > 1:
-		# 	sticker_index = random.randint(0 , nbr_stickers - 1)
-
 		sticker_to_load = self.__get_sticker(self.__category)
 
-		# if QuizBot.app.is_connected == True:
-		# 	await QuizBot.app.send_sticker(self.groupe_id , sticker_to_load)
-		# else:
-		# 	async with QuizBot.app:
-		# 		await QuizBot.app.send_sticker(self.groupe_id , sticker_to_load)
 		
 		await self.__send_sticker(sticker_to_load)
-		# print("pass sticker")
-		# for question in questions:
-		# 	print(question)
-
-
-		# print("\n")
-		# print("\n")
 
 		for question in questions:
 			keys = question.keys()
@@ -454,16 +437,16 @@ class QuizBot:
 			# print(propositions)
 
 			# print(index_correct)
-
-			
 			if QuizBot.app.is_connected == True:
 				await QuizBot.app.send_poll(self.groupe_id , question["question"] , propositions , type = enums.PollType.QUIZ , correct_option_id = index_correct)
 			else: 
 				async with QuizBot.app:
 					await QuizBot.app.send_poll(self.groupe_id , question["question"] , propositions , type = enums.PollType.QUIZ , correct_option_id = index_correct)
 
-			# print("quiz sending ............")
-		await self.__send_vote(conn)
+		if manual_call == False:
+			await self.__send_vote(conn)
+		
+		
 		conn.close()
 
 
@@ -493,9 +476,10 @@ class QuizBot:
 				# print(f"now {now}")
 				# print(f"to_add {to_add}")
 				# print(f"nbr_second {nbr_second}")
-			
 			nbr_second = self.__get_period(self.__period , now = now, hour = hour)
-			self.__job = QuizBot.scheduler.add_job(QuizBot.send_quiz , "interval" ,args = [self , connect_db()], seconds=nbr_second)
+			nbr_second = 60
+			self.__job = QuizBot.scheduler.add_job(QuizBot.send_quiz , "interval" ,args = [self , False], seconds=nbr_second)
+			print(f"enter scheduler {nbr_second}")
 			
 		def __str__(self):
 			return self.groupe_id

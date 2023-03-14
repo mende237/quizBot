@@ -50,25 +50,9 @@ class Vote:
         return Vote(data[0]["VOTE_ID"] ,  data[0]["NAME"] ,data[0]["VOTE_DESCRIPTION"], data[0]["VOTE_DATE"]  ,  data[0]["ID"])
     
 
-    
-    # async def send(self, app:Client , username_channel:str , question:str , 
-    #                     options:list ,vote_date:datetime, close_date:datetime 
-    #                     ,bot_id : int , name : VoteName  , vote_description:str):
-        
-    #     poll = None
-    #     if app.is_connected == True:
-    #         poll = await app.send_poll(username_channel, question , options , close_date=close_date)
-    #     else:
-    #         async with app:
-    #             poll = await app.send_poll(username_channel, question , options , close_date=close_date)
-                
-    #     self.__vote_id = poll.id
-    #     self.__name = name
-    #     self.__vote_description = vote_description
-    #     self.__vote_date = vote_date
-    #     self.__bot_id = bot_id
-    #     self.save()
-    #     pass
+    def get_vote_id(self) -> int:
+        return self.__vote_id
+
 
     @staticmethod
     async def send(app:Client , username_channel:str , question:str , 
