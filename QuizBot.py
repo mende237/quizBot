@@ -322,7 +322,7 @@ class QuizBot:
 									await QuizBot.app.stop_poll(self.groupe_id, questions_vote.get_vote_id())
 									await QuizBot.app.stop_poll(self.groupe_id, difficulty_vote.get_vote_id())
 						except IndexError:
-							print("delete vote which was deleted before")
+							print("stop vote which was deleted before")
 							pass
 					
 					question_winner = await questions_vote.get_result(QuizBot.app , self.groupe_id)
@@ -510,7 +510,7 @@ class QuizBot:
 			if allow:
 				now  = get_time(self.__time_zone)
 				nbr_second = self.__get_period(self.__period , now = now, hour = new_hour)
-				nbr_second = 60
+				print(f"nbr_second {nbr_second}")
 				self.__job = QuizBot.scheduler.add_job(QuizBot.send_quiz , "interval" ,args = [self , False], seconds=nbr_second)
 
 		
