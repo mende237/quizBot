@@ -4,9 +4,10 @@ from datetime import datetime
 from mysql.connector import MySQLConnection
 from pyrogram import Client
 from pyrogram.types.messages_and_media.poll_option import PollOption
+from typing import List 
 
 class Vote:
-    __vote_id : int = None
+    __vote_id : int
     __name : VoteName = None
     __vote_date : datetime = None
     __vote_description:str = None
@@ -86,7 +87,7 @@ class Vote:
 
 
     @staticmethod
-    def __get_winner(options:list[PollOption]):
+    def __get_winner(options:List[PollOption]) -> str:
         max:int = 0
         winner:str = None
 

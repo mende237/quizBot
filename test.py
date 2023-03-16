@@ -454,4 +454,6 @@ if isinstance(d2, timedelta):
 # # print(hour)
 # tata:int = 10
 # print(int(tata))
+taro = [] 
+print(type(taro))
 

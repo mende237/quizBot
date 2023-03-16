@@ -199,7 +199,7 @@ class BotManager:
 	
 
 	#cette fonction permet de parser les commandes envoyés par l'utilisateur
-	def parse_parameter(command , groupe_id):
+	def parse_parameter(command):
 		attribut = None
 		value = None
 		
@@ -265,7 +265,7 @@ class BotManager:
 				if attribut.lower() == "hour".lower():
 					hour = BotManager.verify_hour(value)
 					if hour != None:
-						parameter["HOUR"] = hour = datetime.strptime(hour, "%H:%M:%S")
+						parameter["HOUR"] = datetime.strptime(hour, "%H:%M:%S")
 					else:
 						print("errrrorrrr can able to format hour")
 						return None

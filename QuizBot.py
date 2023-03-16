@@ -310,8 +310,23 @@ class QuizBot:
 			if questions_vote != None:
 				difficulty_vote = Vote.get_vote(conn , VoteName.CHOICE_DIFFICUTY_TYPE) 
 				if difficulty_vote != None:
-					await QuizBot.app.stop_poll(self.groupe_id, questions_vote.get_vote_id())
-					await QuizBot.app.stop_poll(self.groupe_id, difficulty_vote.get_vote_id())
+					id_questions_vote = questions_vote.get_vote_id()
+					id_difficulty_vote = difficulty_vote.get_vote_id()
+					print(questions_vote.get_vote_id())
+					print(difficulty_vote.get_vote_id())
+
+					try:
+						if QuizBot.app.is_connected == True:
+							await QuizBot.app.stop_poll(self.groupe_id, 293)
+							await QuizBot.app.stop_poll(self.groupe_id, 291)
+						else:
+							async with QuizBot.app:
+								await QuizBot.app.stop_poll(self.groupe_id, 293)
+								await QuizBot.app.stop_poll(self.groupe_id, 291)
+					except IndexError:
+						print("delete vote which was deleted before")
+						pass
+					
 					question_winner = await questions_vote.get_result(QuizBot.app , self.groupe_id)
 					difficulty_winner = await difficulty_vote.get_result(QuizBot.app , self.groupe_id)
 					print(f"{question_winner} {difficulty_winner}")
@@ -413,9 +428,9 @@ class QuizBot:
 			cmpt = 0
 			index_correct = 0
 			propositions = []
-			#si la longueur la question est supperieur a 255 telegram ne peut pas 
+			#si la longueur la question est supperieur a 291 telegram ne peut pas 
 			#prendre cette question en charge dans ce cas on annnule la question
-			if len(question["question"]) > 255:
+			if len(question["question"]) > 291:
 				continue
 			
 			interupt = False
@@ -497,6 +512,7 @@ class QuizBot:
 			if allow:
 				now  = get_time(self.__time_zone)
 				nbr_second = self.__get_period(self.__period , now = now, hour = new_hour)
+				nbr_second = 60
 				self.__job = QuizBot.scheduler.add_job(QuizBot.send_quiz , "interval" ,args = [self , False], seconds=nbr_second)
 
 		
