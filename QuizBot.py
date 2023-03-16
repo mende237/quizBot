@@ -304,28 +304,26 @@ class QuizBot:
 
 	#on recupere les resultats des votes pour les questions 
 	#et pour la difficulte
-	async def __get_vote_result(self , conn:MySQLConnection):
+	async def __get_vote_result(self , conn:MySQLConnection , manual_call):
 		if self.__democracy:
 			questions_vote = Vote.get_vote(conn , VoteName.CHOICE_QUESTIONS_TYPE)
 			if questions_vote != None:
 				difficulty_vote = Vote.get_vote(conn , VoteName.CHOICE_DIFFICUTY_TYPE) 
 				if difficulty_vote != None:
-					id_questions_vote = questions_vote.get_vote_id()
-					id_difficulty_vote = difficulty_vote.get_vote_id()
-					print(questions_vote.get_vote_id())
-					print(difficulty_vote.get_vote_id())
-
-					try:
-						if QuizBot.app.is_connected == True:
-							await QuizBot.app.stop_poll(self.groupe_id, 293)
-							await QuizBot.app.stop_poll(self.groupe_id, 291)
-						else:
-							async with QuizBot.app:
-								await QuizBot.app.stop_poll(self.groupe_id, 293)
-								await QuizBot.app.stop_poll(self.groupe_id, 291)
-					except IndexError:
-						print("delete vote which was deleted before")
-						pass
+					# print(questions_vote.get_vote_id())
+					# print(difficulty_vote.get_vote_id())
+					if not manual_call: 
+						try:
+							if QuizBot.app.is_connected == True:
+								await QuizBot.app.stop_poll(self.groupe_id, questions_vote.get_vote_id())
+								await QuizBot.app.stop_poll(self.groupe_id, difficulty_vote.get_vote_id())
+							else:
+								async with QuizBot.app:
+									await QuizBot.app.stop_poll(self.groupe_id, questions_vote.get_vote_id())
+									await QuizBot.app.stop_poll(self.groupe_id, difficulty_vote.get_vote_id())
+						except IndexError:
+							print("delete vote which was deleted before")
+							pass
 					
 					question_winner = await questions_vote.get_result(QuizBot.app , self.groupe_id)
 					difficulty_winner = await difficulty_vote.get_result(QuizBot.app , self.groupe_id)
@@ -404,7 +402,7 @@ class QuizBot:
 				self.__category = random.choice(CATEGORY_TAB)
 				self.__difficulty = random.choice(DIFFICULTY_TAB)
 			else:
-				cat , dif = await self.__get_vote_result(conn)
+				cat , dif = await self.__get_vote_result(conn , manual_call)
 				if cat != None and dif != None:
 					self.__category = cat
 					self.__difficulty = dif
@@ -461,7 +459,7 @@ class QuizBot:
 				async with QuizBot.app:
 					await QuizBot.app.send_poll(self.groupe_id , question["question"] , propositions , type = enums.PollType.QUIZ , correct_option_id = index_correct)
 
-		if manual_call == False:
+		if not manual_call:
 			await self.__send_vote(conn)
 		
 		
