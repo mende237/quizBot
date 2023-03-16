@@ -86,7 +86,7 @@ class Vote:
 
 
     @staticmethod
-    def __get_winner(options:list[PollOption]) -> str:
+    def __get_winner(options:list[PollOption]):
         max:int = 0
         winner:str = None
 
