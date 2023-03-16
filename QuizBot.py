@@ -7,13 +7,12 @@ from utils.TimeManagement import get_time , time_in_second
 from utils.StickersManagement import STICKERS
 from Vote import Vote
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from  mysql.connector import MySQLConnection
+from mysql.connector import MySQLConnection
 from apscheduler.job import Job
 from datetime import datetime
 from datetime import timedelta
 from urllib.parse import unquote
 from pyrogram import Client , enums
-from pyrogram import Client
 import locale
 from decouple import config
 
@@ -61,7 +60,7 @@ class QuizBot:
 
 		if "AUTOMATIC" in keys and parameters["AUTOMATIC"] != None:
 			self.__automatic = parameters["AUTOMATIC"]
-			self.__hour = get_time(self.__time_zone)
+			# self.__hour = get_time(self.__time_zone)
 			modif = True
    
 		if "CATEGORY" in keys and parameters["CATEGORY"] != None:
@@ -75,12 +74,14 @@ class QuizBot:
    
 		if "HOUR" in keys and parameters["HOUR"] != None:
 			modif = True
-			try:
-				self.__hour = datetime.strptime(parameters["HOUR"] , "%Y-%m-%d %H:%M:%S")
-			except ValueError:
-				self.__hour = datetime.strptime(parameters["HOUR"] , "%H:%M:%S")
-			except TypeError:
-				self.__hour = parameters["HOUR"]
+			self.__hour = parameters["HOUR"]
+
+			# try:
+			# 	self.__hour = datetime.strptime(parameters["HOUR"] , "%Y-%m-%d %H:%M:%S")
+			# except ValueError:
+			# 	self.__hour = datetime.strptime(parameters["HOUR"] , "%H:%M:%S")
+			# except TypeError:
+			# 	self.__hour = parameters["HOUR"]
 		
 		if "PERIOD" in keys and parameters["PERIOD"] != None:
 			modif = True
@@ -89,7 +90,9 @@ class QuizBot:
 		print(f"automatic {self.__automatic } time zone {self.__time_zone} category {self.__category} difficulty {self.__difficulty} nbr_limte {self.__nbr_limite } hour {self.__hour } preiod {self.__period}")
 		if is_init == False:
 			if modif == True and self.__automatic == 1:
-				self.__job.remove()
+				if self.__job != None:
+					self.__job.remove()
+
 				await self.schedule_quiz()
 
 
@@ -457,8 +460,46 @@ class QuizBot:
 			# if self.__period < 24 == 0:
 			# 	nbr_second = int(self.__period) * 3600
 			# else:
-			hour = datetime.strptime(str(self.__hour), "%Y-%m-%d %H:%M:%S")
-			now  = get_time(self.__time_zone)
+			new_hour = None
+			now = None
+			allow : bool = True
+			if self.__period >= 24 and self.__hour == None:
+				allow = False
+
+			print(self.__hour)
+			if self.__hour != None:
+				now = get_time(self.__time_zone)
+				if isinstance(self.__hour, datetime):
+					new_hour = datetime(now.date().year , now.date().month , now.date().day ,
+										self.__hour.time().hour , self.__hour.time().minute , self.__hour.time().second)
+				elif isinstance(self.__hour, timedelta):
+					temp = datetime.strptime(str(self.__hour), "%H:%M:%S")
+					new_hour = datetime(now.date().year , now.date().month , now.date().day ,
+										temp.time().hour , temp.time().minute , temp.time().second)
+
+				
+			print(new_hour)
+			# if self.__hour != None:
+			# 	hour = datetime.strptime(str(self.__hour), "%Y-%m-%d %H:%M:%S")
+			
+			# if self.__period >= 24 and self.__hour != None:
+			# 	hour = datetime.strptime(str(self.__hour), "%Y-%m-%d %H:%M:%S")
+			# elif self.__period >= 24 and self.__hour == None:
+			# 	# if QuizBot.app.is_connected == True:
+			# 	# 	await QuizBot.app.send_message(self.groupe_id , "you have to set a time zone")
+			# 	# else:
+			# 	# 	async with QuizBot.app:
+			# 	# 		await QuizBot.app.send_message(self.groupe_id , "you have to set a time zone")
+			# 	pass
+			# elif (self.__period >= 24 and self.__hour != None) or  self.__period < 24:
+
+			# 	pass
+			if allow:
+				now  = get_time(self.__time_zone)
+				nbr_second = self.__get_period(self.__period , now = now, hour = new_hour)
+				self.__job = QuizBot.scheduler.add_job(QuizBot.send_quiz , "interval" ,args = [self , False], seconds=nbr_second)
+
+		
 			# 	print(hour)
 			# 	now  = get_time(self.__time_zone)
 			# 	to_add  = (hour - now).seconds if hour > now else -(now - hour).seconds
@@ -476,9 +517,6 @@ class QuizBot:
 				# print(f"now {now}")
 				# print(f"to_add {to_add}")
 				# print(f"nbr_second {nbr_second}")
-			nbr_second = self.__get_period(self.__period , now = now, hour = hour)
-			nbr_second = 60
-			self.__job = QuizBot.scheduler.add_job(QuizBot.send_quiz , "interval" ,args = [self , False], seconds=nbr_second)
 			print(f"enter scheduler {nbr_second}")
 			
 		def __str__(self):

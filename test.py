@@ -373,29 +373,29 @@
 # 		)
 
 
-import locale
-from pyrogram import Client , filters , idle
-from decouple import config
-from datetime import datetime
-from datetime import timedelta
-from Vote import Vote
-config.encoding = locale.getpreferredencoding(False)
+# import locale
+# from pyrogram import Client , filters , idle
+# from decouple import config
+# from datetime import datetime
+# from datetime import timedelta
+# from Vote import Vote
+# config.encoding = locale.getpreferredencoding(False)
 
-api_id = config('TELEGRAM_API_ID')
-api_hash = config('TELEGRAM_API_HASH')
-bot_token = config('TELEGRAM_API_TOKEN')
-
-
-QUIZ_API_TOKEN = config('QUIZ_API_TOKEN')
-TELEGRAM_API_TOKEN = config('TELEGRAM_API_TOKEN')
+# api_id = config('TELEGRAM_API_ID')
+# api_hash = config('TELEGRAM_API_HASH')
+# bot_token = config('TELEGRAM_API_TOKEN')
 
 
-app = Client(
-	"my_bot",
-	api_id=api_id, 
-	api_hash=api_hash,
-	bot_token=bot_token
-)
+# QUIZ_API_TOKEN = config('QUIZ_API_TOKEN')
+# TELEGRAM_API_TOKEN = config('TELEGRAM_API_TOKEN')
+
+
+# app = Client(
+# 	"my_bot",
+# 	api_id=api_id, 
+# 	api_hash=api_hash,
+# 	bot_token=bot_token
+# )
 
 
 # Initializing a date and time
@@ -407,43 +407,51 @@ app = Client(
 # VALUES (106, 3 , "question_type" , "2023:03:10" , "description");
 
 
-@app.on_message(filters.command("toto"))
-async def send_quiz_from_channel(app , message):
-    date_and_time = datetime.now()
-    # Calling the timedelta() function 
-    time_change = timedelta(minutes=10)
-    new_time = date_and_time + time_change
-    poll_id = await Vote.send(app , "Ox00000d3" , "Is this a poll question?", ["Yes", "No", "Maybe"] , open_period = 900)
-    print(poll_id)
+# @app.on_message(filters.command("toto"))
+# async def send_quiz_from_channel(app , message):
+#     date_and_time = datetime.now()
+#     # Calling the timedelta() function 
+#     time_change = timedelta(minutes=10)
+#     new_time = date_and_time + time_change
+#     poll_id = await Vote.send(app , "Ox00000d3" , "Is this a poll question?", ["Yes", "No", "Maybe"] , open_period = 900)
+#     print(poll_id)
 	
-@app.on_message(filters.command("results"))
-async def send_quiz_from_channel(app , message):
-    results = await Vote.get_result(app , "Ox00000d3" , 524)
-    print(results)
+# @app.on_message(filters.command("results"))
+# async def send_quiz_from_channel(app , message):
+#     results = await Vote.get_result(app , "Ox00000d3" , 524)
+#     print(results)
     
 
-app.start()
-idle()
-app.stop()
+# app.start()
+# idle()
+# app.stop()
 
 
-# from datetime import datetime
-# from datetime import timedelta
-# from utils.TimeManagement import get_time
-# # dates in string format
-# str_d1 = '17:0:00'
-# str_d2 = '17:30:20'
+from datetime import datetime
+from datetime import timedelta
+from utils.TimeManagement import get_time
+# dates in string format
+str_d1 = '7:30:00'
+str_d2 = '7:40:20'
 # now = get_time("Africa/Douala")
-# # convert string to date object
-# d1 = datetime.strptime(str_d1, "%H:%M:%S")
-# d2 = datetime.strptime(str_d2, "%H:%M:%S")
+# convert string to date object
+d1 = datetime.strptime(str_d1, "%H:%M:%S")
+d2 = datetime.strptime(str_d2, "%H:%M:%S")
 
-# time_change = timedelta(minutes=60*24)
+time_change = timedelta(minutes=10)
 
+# d2.date().month = now.date().month
+# d2.date().day = now.date().day
+print(d2.date().day)
+print(d2)
 # print(now)
+
+if isinstance(d2, timedelta):
+    print('cooll')
 
 # print(d1)
 # # hour = datetime.strptime(str(new_time), "%H:%M:%S")
 # # print(hour)
 # tata:int = 10
 # print(int(tata))
+

@@ -3,6 +3,7 @@ from unittest import async_case
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from utils.utils import Category , Difficulty
 from QuizBot import QuizBot
+from datetime import datetime
 from utils.utils import connect_db
 
 
@@ -195,8 +196,10 @@ class BotManager:
 		print(message)
 		pass
 	
+	
+
 	#cette fonction permet de parser les commandes envoyés par l'utilisateur
-	def parse_parameter(command):
+	def parse_parameter(command , groupe_id):
 		attribut = None
 		value = None
 		
@@ -262,7 +265,7 @@ class BotManager:
 				if attribut.lower() == "hour".lower():
 					hour = BotManager.verify_hour(value)
 					if hour != None:
-						parameter["HOUR"] = hour
+						parameter["HOUR"] = hour = datetime.strptime(hour, "%H:%M:%S")
 					else:
 						print("errrrorrrr can able to format hour")
 						return None

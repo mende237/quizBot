@@ -138,9 +138,8 @@ async def send(app : Client, message , is_private_message = False):
 
 	print(f"username {username}")
 	quizBot = BotManager.find_bot(username)
-	conn = connect_db()
 	if quizBot != None:
-		await quizBot.send_quiz(conn , manual_call=True)       
+		await quizBot.send_quiz(manual_call=True)       
 	else:
 		await app.send_message(id, "register your group before")
 
