@@ -321,12 +321,21 @@ class QuizBot:
 
 	#cette fonction retourne la frequence de repetition d'une action 
 	#en seconde
-	def __get_period(self , period:int , now : datetime , hour:datetime = None):
+	def __get_period(self , period:int , now : datetime , hour:datetime|timedelta = None):
+		new_hour : datetime = None
+		if isinstance(hour, datetime):
+			new_hour = datetime(now.date().year , now.date().month , now.date().day ,
+								hour.time().hour , hour.time().minute , hour.time().second)
+		elif isinstance(hour, timedelta):
+			temp = datetime.strptime(str(hour), "%H:%M:%S")
+			new_hour = datetime(now.date().year , now.date().month , now.date().day ,
+								temp.time().hour , temp.time().minute , temp.time().second)
+
 		nbr_second : int = 0
 		if period < 24:
 			nbr_second = int(period) * 3600
 		else:
-			to_add  = (hour - now).seconds if hour > now else -(now - hour).seconds
+			to_add  = (new_hour - now).seconds if new_hour > now else -(now - new_hour).seconds
 			nbr_second = period * 3600 + to_add
 
 		return nbr_second
@@ -496,7 +505,7 @@ class QuizBot:
 			# 	pass
 			if allow:
 				now  = get_time(self.__time_zone)
-				nbr_second = self.__get_period(self.__period , now = now, hour = new_hour)
+				nbr_second = self.__get_period(self.__period , now = now, hour = self.__hour)
 				self.__job = QuizBot.scheduler.add_job(QuizBot.send_quiz , "interval" ,args = [self , False], seconds=nbr_second)
 
 		
