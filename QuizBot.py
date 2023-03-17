@@ -334,7 +334,7 @@ class QuizBot:
 
 	#cette fonction retourne la frequence de repetition d'une action 
 	#en seconde
-	def __get_period(self , period:int , now : datetime , hour:datetime|timedelta = None):
+	def __get_period(self , period:int , now : datetime , hour = None):
 		new_hour : datetime = None
 		if isinstance(hour, datetime):
 			new_hour = datetime(now.date().year , now.date().month , now.date().day ,
