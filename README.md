@@ -8,7 +8,7 @@ one command you can send the quiz in your channel
 2- you can automatise this pocess by selecting the frequence and the hour you want the bot send the quiz
 and the bot will select random category and random difficuty and send it back to your channel
 3- you can also simulate a kind of democracy in which the user of your channel can vote to decide which 
-category and difficulty the want 
+category and difficulty they want 
 
 # HOW TO USE IT
 
